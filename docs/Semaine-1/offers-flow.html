@@ -203,7 +203,7 @@
             <p>Vitest et Supertest côté backend sur SQLite en mémoire; Vitest et Testing Library côté frontend avec fetch simulé.</p>
           </article>
         </div>
-        <p style="margin:12px 0 0;color:var(--muted);font-size:.82rem">Référence : <a href="architecture.md">architecture détaillée</a> · commandes et installation : <a href="../README.md">README</a>.</p>
+        <p style="margin:12px 0 0;color:var(--muted);font-size:.82rem">Référence : <a href="../architecture.md">architecture détaillée</a> · commandes et installation : <a href="../../README.md">README</a>.</p>
       </section>
 
       <section aria-labelledby="flow-title">
@@ -215,74 +215,76 @@
           <li>
             <span class="step-no">01</span>
             <div><h3>La route frontend est protégée</h3><p><code>App</code> appelle <code>useAuth</code> une seule fois. Un utilisateur autorisé à lister les offres accède à <code>/offres</code>; la page reçoit utilisateur, jeton et callback de déconnexion.</p></div>
-            <div class="file-ref"><a href="../frontend/src/App.tsx">frontend/src/App.tsx</a><br><a href="../frontend/src/utils/permissions.ts">frontend/src/utils/permissions.ts</a></div>
+            <div class="file-ref"><a href="../../frontend/src/App.tsx">frontend/src/App.tsx</a><br><a href="../../frontend/src/utils/permissions.ts">frontend/src/utils/permissions.ts</a></div>
           </li>
           <li>
             <span class="step-no">02</span>
-            <div><h3>La page déclenche le chargement</h3><p><code>OffersPage</code> appelle <code>useOffers(token, onUnauthorized)</code>, puis rend les états de chargement, d’erreur, vide ou le tableau.</p></div>
-            <div class="file-ref"><a href="../frontend/src/pages/OffersPage.tsx">frontend/src/pages/OffersPage.tsx</a></div>
+            <div><h3>La page déclenche le chargement</h3><p><code>OffersPage</code> conserve le choix de période, le transmet à <code>useOffers</code>, puis rend les états de chargement, d’erreur, vide ou le tableau.</p></div>
+            <div class="file-ref"><a href="../../frontend/src/pages/OffersPage.tsx">frontend/src/pages/OffersPage.tsx</a></div>
           </li>
           <li>
             <span class="step-no">03</span>
-            <div><h3>Le hook orchestre la requête</h3><p><code>useOffers</code> crée un <code>AbortController</code>, met à jour les offres à la réponse et annule la requête si le composant est démonté. Un 401 déclenche la déconnexion.</p></div>
-            <div class="file-ref"><a href="../frontend/src/hooks/useOffers.ts">frontend/src/hooks/useOffers.ts</a></div>
+            <div><h3>Le hook orchestre la requête</h3><p><code>useOffers</code> relance le chargement lorsque la période change, annule la requête précédente et déclenche la déconnexion sur un 401.</p></div>
+            <div class="file-ref"><a href="../../frontend/src/hooks/useOffers.ts">frontend/src/hooks/useOffers.ts</a></div>
           </li>
           <li>
             <span class="step-no">04</span>
-            <div><h3>Le service envoie le jeton</h3><p><code>getOffers</code> appelle <code>/api/offers</code> avec l’en-tête <code>Authorization</code>. Il vérifie le statut et valide le JSON avec <code>isOfferList</code>.</p></div>
-            <div class="file-ref"><a href="../frontend/src/services/offers.service.ts">frontend/src/services/offers.service.ts</a><br><a href="../frontend/src/utils/guards.ts">frontend/src/utils/guards.ts</a></div>
+            <div><h3>Le service envoie le jeton et le filtre</h3><p><code>getOffers</code> appelle <code>/api/offers?period=P1</code> si une période est choisie; sans filtre, il appelle <code>/api/offers</code>. Le JSON est validé avec <code>isOfferList</code>.</p></div>
+            <div class="file-ref"><a href="../../frontend/src/services/offers.service.ts">frontend/src/services/offers.service.ts</a><br><a href="../../frontend/src/utils/guards.ts">frontend/src/utils/guards.ts</a></div>
           </li>
           <li>
             <span class="step-no">05</span>
-            <div><h3>Express authentifie puis autorise</h3><p><code>app.ts</code> place <code>authenticate</code> avant le routeur. La route vérifie ensuite <code>canListOffers</code>; les contacts sans rôle déposant reçoivent 403, une session invalide 401.</p></div>
-            <div class="file-ref"><a href="../backend/src/app.ts">backend/src/app.ts</a><br><a href="../backend/src/controllers/offers.controller.ts">backend/src/controllers/offers.controller.ts</a><br><a href="../backend/src/services/permissions.ts">backend/src/services/permissions.ts</a></div>
+            <div><h3>Express authentifie puis valide</h3><p><code>app.ts</code> place <code>authenticate</code> avant le routeur. La route valide le paramètre <code>period</code>, puis applique <code>canListOffers</code>; les contacts sans rôle déposant reçoivent 403, une session invalide 401.</p></div>
+            <div class="file-ref"><a href="../../backend/src/app.ts">backend/src/app.ts</a><br><a href="../../backend/src/controllers/offers.controller.ts">backend/src/controllers/offers.controller.ts</a><br><a href="../../backend/src/services/permissions.ts">backend/src/services/permissions.ts</a></div>
           </li>
           <li>
             <span class="step-no">06</span>
-            <div><h3>Le service fixe la visibilité</h3><p>Administrateur : toutes les offres. Étudiant : offres publiées. Déposant : ses offres, quel que soit leur statut. Ce filtre protège les résultats indépendamment de l’interface.</p></div>
-            <div class="file-ref"><a href="../backend/src/services/offers.service.ts">backend/src/services/offers.service.ts</a></div>
+            <div><h3>Le service combine les filtres</h3><p>La période s’ajoute à la visibilité du profil : toutes les offres pour un administrateur, les offres publiées pour un étudiant, celles du déposant pour un contact déposant.</p></div>
+            <div class="file-ref"><a href="../../backend/src/services/offers.service.ts">backend/src/services/offers.service.ts</a></div>
           </li>
           <li>
             <span class="step-no">07</span>
-            <div><h3>Le repository lit SQLite</h3><p>La requête joint <code>offers</code> à <code>companies</code>, <code>academic_years</code> et <code>periods</code>; elle applique les filtres de visibilité puis trie par année et création, décroissantes.</p></div>
-            <div class="file-ref"><a href="../backend/src/repositories/offers.repository.ts">backend/src/repositories/offers.repository.ts</a><br><a href="../backend/src/db/migrations/001_initial.sql">backend/src/db/migrations/001_initial.sql</a></div>
+            <div><h3>Le repository filtre les lignes SQL</h3><p>La requête joint <code>offers</code> à <code>companies</code>, <code>academic_years</code> et <code>periods</code>, puis combine période et visibilité avant le tri existant.</p></div>
+            <div class="file-ref"><a href="../../backend/src/repositories/offers.repository.ts">backend/src/repositories/offers.repository.ts</a><br><a href="../../backend/src/db/migrations/001_initial.sql">backend/src/db/migrations/001_initial.sql</a></div>
           </li>
           <li>
             <span class="step-no">08</span>
             <div><h3>Les mappers préparent le DTO</h3><p>La ligne SQL devient un modèle métier, puis un DTO réduit à <code>id</code>, <code>title</code>, <code>companyShortName</code>, <code>academicYear</code>, <code>period</code> et <code>status</code>.</p></div>
-            <div class="file-ref"><a href="../backend/src/mappers/offer.mapper.ts">backend/src/mappers/offer.mapper.ts</a><br><a href="../backend/src/models/offer.ts">backend/src/models/offer.ts</a></div>
+            <div class="file-ref"><a href="../../backend/src/mappers/offer.mapper.ts">backend/src/mappers/offer.mapper.ts</a><br><a href="../../backend/src/models/offer.ts">backend/src/models/offer.ts</a></div>
           </li>
           <li>
             <span class="step-no">09</span>
             <div><h3>React affiche le résultat</h3><p>Le tableau affiche titre, entreprise, année, période et statut. Les codes de période et de statut sont traduits en libellés français.</p></div>
-            <div class="file-ref"><a href="../frontend/src/components/OfferTable.tsx">frontend/src/components/OfferTable.tsx</a><br><a href="../frontend/src/utils/labels.ts">frontend/src/utils/labels.ts</a></div>
+            <div class="file-ref"><a href="../../frontend/src/components/OfferTable.tsx">frontend/src/components/OfferTable.tsx</a><br><a href="../../frontend/src/utils/labels.ts">frontend/src/utils/labels.ts</a></div>
           </li>
         </ol>
       </section>
 
       <section aria-labelledby="filter-title">
         <div class="section-head">
-          <h2 id="filter-title">Ajouter un filtre par période</h2>
-          <p>Le filtre doit réduire les résultats sans remplacer les règles de visibilité existantes.</p>
+          <h2 id="filter-title">Filtre par période</h2>
+          <p>Le filtre facultatif est disponible sur la page des offres; il réduit les résultats sans remplacer les règles de visibilité existantes.</p>
         </div>
         <table class="filter-table">
           <thead><tr><th>Fichier</th><th>Responsabilité du changement</th></tr></thead>
           <tbody>
-            <tr><td><a href="../frontend/src/pages/OffersPage.tsx">frontend/src/pages/OffersPage.tsx</a></td><td>Ajouter le contrôle de période et conserver sa sélection; afficher toutes les périodes par défaut.</td></tr>
-            <tr><td><a href="../frontend/src/hooks/useOffers.ts">frontend/src/hooks/useOffers.ts</a></td><td>Transmettre le filtre au service et relancer proprement le chargement lorsque sa valeur change.</td></tr>
-            <tr><td><a href="../frontend/src/services/offers.service.ts">frontend/src/services/offers.service.ts</a></td><td>Sérialiser la valeur sélectionnée en paramètre facultatif, par exemple <code>?period=P1</code>.</td></tr>
-            <tr><td><a href="../backend/src/controllers/offers.controller.ts">backend/src/controllers/offers.controller.ts</a></td><td>Lire et valider le paramètre HTTP; rejeter une valeur inconnue ou répétée avec une erreur cohérente.</td></tr>
-            <tr><td><a href="../backend/src/services/offers.service.ts">backend/src/services/offers.service.ts</a></td><td>Combiner le filtre de période avec le filtre de rôle; ne jamais laisser le paramètre contourner la visibilité.</td></tr>
-            <tr><td><a href="../backend/src/repositories/offers.repository.ts">backend/src/repositories/offers.repository.ts</a></td><td>Étendre <code>OfferFilter</code> et ajouter la condition SQL sur <code>periods.code</code>, en gardant les filtres actuels.</td></tr>
-            <tr><td><a href="../backend/API.md">backend/API.md</a></td><td>Documenter le paramètre, les valeurs acceptées (<code>P1</code>, <code>P2</code>, <code>OTHER</code>) et les erreurs possibles.</td></tr>
-            <tr><td><a href="../backend/tests/offers.test.ts">backend/tests/offers.test.ts</a></td><td>Tester le filtre pour les profils, les périodes sans résultat et les paramètres invalides; vérifier que les droits restent appliqués.</td></tr>
-            <tr><td><a href="../frontend/tests/OffersPage.test.tsx">frontend/tests/OffersPage.test.tsx</a></td><td>Tester le contrôle, le paramètre envoyé et les résultats affichés après sélection.</td></tr>
+            <tr><td><a href="../../frontend/src/pages/OffersPage.tsx">frontend/src/pages/OffersPage.tsx</a></td><td>Affiche « Toutes les périodes », P1, P2 et Autre; toutes les périodes sont sélectionnées par défaut.</td></tr>
+            <tr><td><a href="../../frontend/src/hooks/useOffers.ts">frontend/src/hooks/useOffers.ts</a></td><td>Relance et annule le chargement lorsque la sélection change.</td></tr>
+            <tr><td><a href="../../frontend/src/services/offers.service.ts">frontend/src/services/offers.service.ts</a></td><td>Envoie le paramètre facultatif <code>?period=P1</code>; l’option par défaut n’ajoute aucun paramètre.</td></tr>
+            <tr><td><a href="../../frontend/src/index.css">frontend/src/index.css</a></td><td>Style du contrôle de sélection.</td></tr>
+            <tr><td><a href="../../backend/src/controllers/offers.controller.ts">backend/src/controllers/offers.controller.ts</a></td><td>Valide le paramètre HTTP et rejette les valeurs inconnues ou répétées.</td></tr>
+            <tr><td><a href="../../backend/src/services/offers.service.ts">backend/src/services/offers.service.ts</a></td><td>Combine période et visibilité par profil.</td></tr>
+            <tr><td><a href="../../backend/src/repositories/offers.repository.ts">backend/src/repositories/offers.repository.ts</a></td><td>Applique la condition SQL sur le code de période en conservant les filtres existants.</td></tr>
+            <tr><td><a href="../../backend/src/models/offer.ts">backend/src/models/offer.ts</a></td><td>Définit les codes de période autorisés utilisés par la validation HTTP.</td></tr>
+            <tr><td><a href="../../backend/API.md">backend/API.md</a></td><td>Documente le paramètre facultatif, les valeurs acceptées et les erreurs possibles.</td></tr>
+            <tr><td><a href="../../backend/tests/offers.test.ts">backend/tests/offers.test.ts</a></td><td>Vérifie le filtre sur plusieurs profils, les paramètres invalides et le maintien des droits.</td></tr>
+            <tr><td><a href="../../frontend/tests/OffersPage.test.tsx">frontend/tests/OffersPage.test.tsx</a></td><td>Vérifie les choix disponibles, l’envoi du paramètre et le retour à toutes les périodes.</td></tr>
           </tbody>
         </table>
         <div class="rules">
           <article class="rule">
-            <h3>Contrat conseillé</h3>
-            <p>Un paramètre facultatif <code>period</code> accepte <code>P1</code>, <code>P2</code> ou <code>OTHER</code>. Sans paramètre, le comportement actuel reste inchangé.</p>
+            <h3>Contrat de l’API</h3>
+            <p>Le paramètre facultatif <code>period</code> accepte <code>P1</code>, <code>P2</code> ou <code>OTHER</code>. Sans paramètre, le comportement actuel reste inchangé.</p>
           </article>
           <article class="rule warning">
             <h3>À préserver</h3>
@@ -298,14 +300,14 @@
           <p>Les tests proches du parcours servent de point de départ pour vérifier une évolution.</p>
         </div>
         <div class="rules">
-          <article class="rule"><h3>API</h3><p><a href="../backend/tests/offers.test.ts">offers.test.ts</a> couvre authentification, accès par profil, visibilité et forme du DTO sur une base SQLite en mémoire.</p></article>
-          <article class="rule"><h3>Interface</h3><p><a href="../frontend/tests/OffersPage.test.tsx">OffersPage.test.tsx</a> couvre rendu, états vides, refus d’accès, session expirée et descriptions selon le profil avec <code>fetch</code> simulé.</p></article>
+          <article class="rule"><h3>API</h3><p><a href="../../backend/tests/offers.test.ts">offers.test.ts</a> couvre authentification, accès par profil, visibilité et forme du DTO sur une base SQLite en mémoire.</p></article>
+          <article class="rule"><h3>Interface</h3><p><a href="../../frontend/tests/OffersPage.test.tsx">OffersPage.test.tsx</a> couvre rendu, états vides, refus d’accès, session expirée et descriptions selon le profil avec <code>fetch</code> simulé.</p></article>
         </div>
       </section>
 
       <footer class="footer">
         <span>Gesta · parcours de lecture des offres</span>
-        <span>Références : <a href="architecture.md">docs/architecture.md</a> · <a href="../backend/API.md">backend/API.md</a></span>
+        <span>Références : <a href="../architecture.md">docs/architecture.md</a> · <a href="../../backend/API.md">backend/API.md</a></span>
       </footer>
     </main>
   </body>
