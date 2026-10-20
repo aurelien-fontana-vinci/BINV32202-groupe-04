@@ -111,3 +111,106 @@ Validated all five documentation links and both referenced root npm scripts. No 
 Possible next additions: `/create-instruction backend.instructions.md` for backend-specific layering and migration guidance, and `/create-instruction frontend.instructions.md` for React and UI conventions. These could apply only to their respective source directories. `/chronicle improve` can help refine the guidance as session history accumulates.
 
 Made changes.
+
+User: quel est le role du dossier /frontend/
+
+GitHub Copilot: Le dossier `frontend` contient l’interface web de Gesta : une application React écrite en TypeScript et servie avec Vite. Elle gère les pages et les composants, l’état via des hooks, et les échanges avec l’API.
+
+Son organisation suit le parcours `pages → hooks → services/utils → models`, avec les composants réutilisables dans `src/components/`. Les tests de l’interface sont dans `tests`. En développement, Vite transmet les appels `/api/...` au backend. Voir `architecture.md`.
+
+User: parcour la route qui affiche les offres et fait moi un resumé
+
+GitHub Copilot: Je vais suivre le trajet des offres depuis la route HTTP jusqu’à leur affichage dans l’interface, en vérifiant les contrôles d’accès et le filtrage appliqué.
+
+Read 
+
+Read 
+
+Read 
+
+Read 
+
+Read 
+
+Read 
+
+Le flux principal est clair : `GET /offers` délègue au service, qui choisit le filtre selon le profil, puis le repository interroge SQLite. Je vérifie encore l’ordre des middlewares et le rendu du tableau pour préciser où l’authentification et la mise en forme interviennent.
+
+Read 
+
+Read 
+
+Read 
+
+Read 
+
+Read 
+
+Read 
+
+Le parcours d’affichage des offres fonctionne ainsi :
+
+1. La page `Offres de stage` appelle le hook `useOffers`, qui demande les offres au service frontend : `OffersPage.tsx`, `useOffers.ts`.
+2. Le service envoie `GET /api/offers` avec le jeton dans l’en-tête `Authorization`. Le proxy de développement transmet l’appel à la route backend `GET /offers` : `offers.service.ts`, `app.ts`.
+3. Le backend authentifie l’utilisateur. La route autorise les administrateurs, les étudiants et les contacts ayant le rôle de déposant. Sans session, la réponse est `401`; sans le rôle requis, elle est `403` : `authenticate.ts`, `permissions.ts`.
+4. Le service applique ensuite le filtre de visibilité : l’administrateur voit toutes les offres, l’étudiant seulement celles publiées, et le déposant celles qu’il a déposées. Le repository récupère aussi les informations de l’entreprise, de l’année et de la période; il trie par année puis par date de création, de la plus récente à la plus ancienne : `offers.service.ts`, `offers.repository.ts`.
+5. Le backend transforme les résultats en réponse JSON. Le frontend valide la réponse, puis affiche un état de chargement, une erreur, un message si aucune offre n’est disponible, ou le tableau des offres : `offer.mapper.ts`, `OfferTable.tsx`.
+
+La route actuelle ne propose ni recherche ni pagination.
+
+User: Explique l’architecture du projet, puis génère dans ./docs un fichier html qui retrace
+le parcours qui permet d’afficher les offres, du composant React jusqu’à la base
+de données. Indique les fichiers qui seraient concernés par l’ajout d’un filtre par
+période. Ne modifie aucun fichier.
+
+GitHub Copilot: Je vais reprendre l’architecture documentée et vérifier le parcours actuel des offres ainsi que les points d’entrée d’un filtre de période. Je vais créer uniquement un nouveau document HTML dans `docs`, sans toucher aux fichiers existants.
+
+Read 
+
+Searched for files matching `**/docs/**/*.html`, no matches
+
+Read 
+
+Read 
+
+Read 
+
+Read 
+
+Le code confirme que la période existe déjà dans le modèle et que le repository la récupère depuis `periods`; un filtre devrait donc traverser l’API et le frontend, sans migration de schéma. Je vais ajouter un seul fichier, `docs/parcours-offres.html`, avec le schéma du flux, les règles de visibilité et les fichiers probablement concernés; je vérifierai ensuite ses liens locaux.
+
+Apply Patch
+
+Searched for files matching `**/backend/src/db/migrations/*.sql`, 1 match
+
+Read 
+
+Read 
+
+Read , lines 75 to 171
+
+Read 
+
+Le parcours va de `App.tsx` à `/offres`, puis traverse page, hook, service HTTP, contrôleur, service métier, repository et SQLite. La période existe déjà dans le modèle et la requête SQL; je vérifie sa contrainte de schéma pour confirmer qu’un filtre n’exigerait pas de migration avant de produire le diagramme.
+
+Read , lines 120 to 162
+
+Read , lines 1 to 130
+
+Le schéma confirme que l’offre référence déjà une période et que le repository la joint; un filtre par période devrait donc toucher la validation/API, les filtres métier/SQL, l’interface et les tests, sans migration de base. Je crée maintenant `docs/offers-flow.html` comme nouveau fichier autonome, avec le flux complet et une liste des fichiers concernés; aucun fichier existant ne sera modifié.
+
+Generating patch (315 lines) in 
+
+
+```
+
+```
+Le document est créé. Je vérifie maintenant que tous ses liens locaux pointent vers des fichiers existants et que la structure HTML de base est complète; la vérification reste limitée à ce nouvel artefact.
+
+Ran terminal command: node --input-type=module -e 'import { readFileSync, existsSync } from "node:fs"; import { resolve } from "node:path"; const html = readFileSync("docs/offers-flow.html", "utf8"); const links = [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]); const missing = links.filter((link) => existsSync(resolve("docs", link)) === false); const ids = [...html.matchAll(/id="([^"]+)"/g)].map((match) => match[1]); const required = ["<!doctype html>", "<html lang=\"fr\">", "<main>", "</html>"]; const absent = required.filter((value) => html.includes(value) === false); const duplicateIds = new Set(ids).size < ids.length; if (missing.length || absent.length || duplicateIds) { console.error({ missing, absent, duplicateIds }); process.exitCode = 1; } else { console.log(`Validated ${links.length} local links, ${ids.length} unique IDs, and required HTML structure.`); }'
+
+J’ai créé `offers-flow.html`. Il présente l’architecture React–Express–SQLite, le parcours complet des offres jusqu’au rendu, et les fichiers à prévoir pour ajouter un filtre par période. Aucun fichier existant n’a été modifié.
+
+Le schéma contient déjà les périodes liées aux offres : une migration n’est donc pas nécessaire pour ce filtre. Vérification réussie : les 31 liens locaux du document pointent vers des fichiers existants.
+
+Made changes.

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Architecture de Gesta et parcours de la liste des offres, de React à SQLite.">
+    <title>Parcours des offres | Gesta</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f5f7f2;
+        --surface: #fff;
+        --ink: #1d2b27;
+        --muted: #61706a;
+        --line: #dce4dd;
+        --green: #146451;
+        --green-soft: #e5f1eb;
+        --coral: #bd513b;
+        --coral-soft: #f8e9e4;
+        --gold: #b47d13;
+        --gold-soft: #fbf1d9;
+        --blue: #45628f;
+        --blue-soft: #e9eef7;
+        --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        --serif: Georgia, "Times New Roman", serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(90deg, transparent 49.9%, rgb(20 100 81 / 3%) 50%, transparent 50.1%),
+          var(--paper);
+        color: var(--ink);
+        font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      a { color: var(--green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+      a:hover { color: var(--coral); }
+      code, .eyebrow, .step-no, .tag { font-family: var(--mono); }
+      code { font-size: .9em; overflow-wrap: anywhere; }
+
+      .masthead {
+        background: var(--ink);
+        color: #f7faf6;
+        padding: 20px max(24px, calc((100% - 1120px) / 2));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 5px solid var(--green);
+      }
+
+      .brand { font-weight: 750; letter-spacing: .04em; }
+      .masthead small { color: #b9c9c1; font-family: var(--mono); font-size: .72rem; }
+
+      main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 52px 0 76px; }
+      .intro { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(230px, .7fr); gap: 40px; align-items: end; }
+      .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .09em; font-size: .75rem; font-weight: 700; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { max-width: 760px; margin-bottom: 14px; font: 500 clamp(2.4rem, 5vw, 4rem)/1.04 var(--serif); letter-spacing: 0; }
+      .lead { max-width: 700px; margin: 0; color: var(--muted); font-size: 1.08rem; }
+      .endpoint { border-left: 3px solid var(--coral); padding: 12px 0 12px 18px; }
+      .endpoint span { display: block; color: var(--muted); font-size: .78rem; }
+      .endpoint code { display: block; margin-top: 4px; font-size: 1rem; font-weight: 700; }
+
+      section { margin-top: 60px; }
+      .section-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+      .section-head h2 { margin-bottom: 0; font: 500 1.9rem/1.15 var(--serif); letter-spacing: 0; }
+      .section-head p { max-width: 520px; margin: 0; color: var(--muted); font-size: .94rem; }
+
+      .architecture { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); background: var(--surface); }
+      .arch-unit { min-height: 164px; padding: 22px; border-right: 1px solid var(--line); }
+      .arch-unit:last-child { border-right: 0; }
+      .arch-unit:nth-child(1) { border-top: 4px solid var(--green); }
+      .arch-unit:nth-child(2) { border-top: 4px solid var(--coral); }
+      .arch-unit:nth-child(3) { border-top: 4px solid var(--gold); }
+      .arch-unit:nth-child(4) { border-top: 4px solid var(--blue); }
+      .arch-unit h3 { margin-bottom: 8px; font-size: 1rem; }
+      .arch-unit p { margin: 0; color: var(--muted); font-size: .88rem; }
+      .arch-unit .tag { display: inline-block; margin-bottom: 13px; color: var(--muted); font-size: .68rem; text-transform: uppercase; }
+
+      .flow {
+        position: relative;
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .flow::before { content: ""; position: absolute; left: 19px; top: 24px; bottom: 24px; width: 2px; background: var(--line); }
+      .flow li { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(180px, .55fr); gap: 18px; align-items: start; padding: 20px 22px 20px 0; border: 1px solid var(--line); background: var(--surface); }
+      .step-no { z-index: 1; display: grid; place-items: center; width: 40px; aspect-ratio: 1; border: 1px solid var(--green); border-radius: 50%; background: var(--paper); color: var(--green); font-size: .78rem; font-weight: 700; }
+      .flow h3 { margin: 0 0 4px; font-size: 1rem; }
+      .flow p { margin: 0; color: var(--muted); font-size: .9rem; }
+      .flow .file-ref { align-self: center; color: var(--muted); font-size: .78rem; }
+      .flow .file-ref a { font-family: var(--mono); }
+      .tag { display: inline-block; margin: 0 5px 5px 0; padding: 2px 7px; border-radius: 2px; font-size: .69rem; font-weight: 700; }
+      .tag.ui { background: var(--green-soft); color: var(--green); }
+      .tag.api { background: var(--coral-soft); color: var(--coral); }
+      .tag.db { background: var(--gold-soft); color: #80580c; }
+      .tag.return { background: var(--blue-soft); color: var(--blue); }
+
+      .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .rule { padding: 22px 24px; border-left: 4px solid var(--green); background: var(--green-soft); }
+      .rule.warning { border-color: var(--coral); background: var(--coral-soft); }
+      .rule h3 { margin-bottom: 6px; font-size: .98rem; }
+      .rule p { margin: 0; color: #44534d; font-size: .9rem; }
+
+      .filter-table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: .88rem; }
+      .filter-table th, .filter-table td { padding: 13px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+      .filter-table th { background: #e9eee8; color: #35443e; font-family: var(--mono); font-size: .72rem; letter-spacing: .03em; text-transform: uppercase; }
+      .filter-table td:first-child { width: 36%; }
+      .filter-table td:first-child a { font-family: var(--mono); font-size: .78rem; }
+      .filter-table tr:last-child td { border-bottom: 0; }
+      .note { margin-top: 18px; padding: 15px 18px; border: 1px solid #e8d49c; background: var(--gold-soft); color: #5d4a24; font-size: .9rem; }
+
+      .footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: .8rem; }
+
+      @media (max-width: 760px) {
+        main { width: min(100% - 28px, 620px); padding-top: 36px; }
+        .masthead { padding-inline: 16px; }
+        .intro { grid-template-columns: 1fr; gap: 22px; }
+        h1 { font-size: 2.7rem; }
+        section { margin-top: 44px; }
+        .section-head { display: block; }
+        .section-head p { margin-top: 8px; }
+        .architecture { grid-template-columns: 1fr 1fr; }
+        .arch-unit { min-height: 0; border-bottom: 1px solid var(--line); }
+        .arch-unit:nth-child(2) { border-right: 0; }
+        .arch-unit:nth-child(3), .arch-unit:nth-child(4) { border-bottom: 0; }
+        .flow li { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding-right: 14px; }
+        .flow .file-ref { grid-column: 2; }
+        .rules { grid-template-columns: 1fr; }
+        .filter-table { display: block; overflow-x: auto; }
+      }
+
+      @media (max-width: 430px) {
+        .architecture { grid-template-columns: 1fr; }
+        .arch-unit { border-right: 0; border-bottom: 1px solid var(--line) !important; }
+        .arch-unit:last-child { border-bottom: 0 !important; }
+        .footer { display: block; }
+        .footer span { display: block; margin-top: 5px; }
+      }
+
+      @media print {
+        body { background: #fff; }
+        .masthead { print-color-adjust: exact; }
+        main { width: 100%; padding: 24px 0; }
+        section { break-inside: avoid; }
+        a { color: inherit; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="brand">GESTA <span aria-hidden="true">/</span> NOTE D’ARCHITECTURE</div>
+      <small>FRONTEND · API · SQLITE</small>
+    </header>
+
+    <main>
+      <div class="intro">
+        <div>
+          <p class="eyebrow">Du navigateur aux données</p>
+          <h1>Comment une offre arrive à l’écran</h1>
+          <p class="lead">Le parcours de la liste des offres traverse l’interface React, l’API Express et SQLite. Les droits et la visibilité sont décidés côté serveur; le navigateur ne reçoit que le DTO destiné à l’affichage.</p>
+        </div>
+        <div class="endpoint" aria-label="Route de l’API">
+          <span>Requête frontend · proxy Vite vers le backend</span>
+          <code>GET /api/offers</code>
+          <span>Route Express · authentification requise</span>
+          <code>GET /offers</code>
+        </div>
+      </div>
+
+      <section aria-labelledby="architecture-title">
+        <div class="section-head">
+          <h2 id="architecture-title">Architecture du projet</h2>
+          <p>Un monorepo npm à deux applications, reliées par un contrat JSON documenté.</p>
+        </div>
+        <div class="architecture">
+          <article class="arch-unit">
+            <span class="tag ui">01 · Interface</span>
+            <h3>React + TypeScript + Vite</h3>
+            <p>Les pages assemblent hooks et composants; les services appellent l’API, les modèles décrivent ses données.</p>
+          </article>
+          <article class="arch-unit">
+            <span class="tag api">02 · Serveur</span>
+            <h3>Express en couches</h3>
+            <p>Les contrôleurs gèrent HTTP, les services les règles métier, les repositories le SQL et les mappers les conversions.</p>
+          </article>
+          <article class="arch-unit">
+            <span class="tag db">03 · Persistance</span>
+            <h3>SQLite + migrations SQL</h3>
+            <p>Les contraintes relationnelles vivent en base. Les évolutions du schéma passent par de nouvelles migrations numérotées.</p>
+          </article>
+          <article class="arch-unit">
+            <span class="tag return">04 · Vérification</span>
+            <h3>Tests isolés par couche</h3>
+            <p>Vitest et Supertest côté backend sur SQLite en mémoire; Vitest et Testing Library côté frontend avec fetch simulé.</p>
+          </article>
+        </div>
+        <p style="margin:12px 0 0;color:var(--muted);font-size:.82rem">Référence : <a href="architecture.md">architecture détaillée</a> · commandes et installation : <a href="../README.md">README</a>.</p>
+      </section>
+
+      <section aria-labelledby="flow-title">
+        <div class="section-head">
+          <h2 id="flow-title">Le parcours des offres</h2>
+          <p>La réponse remonte ensuite vers la page, qui distingue chargement, erreur, liste vide et tableau de résultats.</p>
+        </div>
+        <ol class="flow">
+          <li>
+            <span class="step-no">01</span>
+            <div><h3>La route frontend est protégée</h3><p><code>App</code> appelle <code>useAuth</code> une seule fois. Un utilisateur autorisé à lister les offres accède à <code>/offres</code>; la page reçoit utilisateur, jeton et callback de déconnexion.</p></div>
+            <div class="file-ref"><a href="../frontend/src/App.tsx">frontend/src/App.tsx</a><br><a href="../frontend/src/utils/permissions.ts">frontend/src/utils/permissions.ts</a></div>
+          </li>
+          <li>
+            <span class="step-no">02</span>
+            <div><h3>La page déclenche le chargement</h3><p><code>OffersPage</code> appelle <code>useOffers(token, onUnauthorized)</code>, puis rend les états de chargement, d’erreur, vide ou le tableau.</p></div>
+            <div class="file-ref"><a href="../frontend/src/pages/OffersPage.tsx">frontend/src/pages/OffersPage.tsx</a></div>
+          </li>
+          <li>
+            <span class="step-no">03</span>
+            <div><h3>Le hook orchestre la requête</h3><p><code>useOffers</code> crée un <code>AbortController</code>, met à jour les offres à la réponse et annule la requête si le composant est démonté. Un 401 déclenche la déconnexion.</p></div>
+            <div class="file-ref"><a href="../frontend/src/hooks/useOffers.ts">frontend/src/hooks/useOffers.ts</a></div>
+          </li>
+          <li>
+            <span class="step-no">04</span>
+            <div><h3>Le service envoie le jeton</h3><p><code>getOffers</code> appelle <code>/api/offers</code> avec l’en-tête <code>Authorization</code>. Il vérifie le statut et valide le JSON avec <code>isOfferList</code>.</p></div>
+            <div class="file-ref"><a href="../frontend/src/services/offers.service.ts">frontend/src/services/offers.service.ts</a><br><a href="../frontend/src/utils/guards.ts">frontend/src/utils/guards.ts</a></div>
+          </li>
+          <li>
+            <span class="step-no">05</span>
+            <div><h3>Express authentifie puis autorise</h3><p><code>app.ts</code> place <code>authenticate</code> avant le routeur. La route vérifie ensuite <code>canListOffers</code>; les contacts sans rôle déposant reçoivent 403, une session invalide 401.</p></div>
+            <div class="file-ref"><a href="../backend/src/app.ts">backend/src/app.ts</a><br><a href="../backend/src/controllers/offers.controller.ts">backend/src/controllers/offers.controller.ts</a><br><a href="../backend/src/services/permissions.ts">backend/src/services/permissions.ts</a></div>
+          </li>
+          <li>
+            <span class="step-no">06</span>
+            <div><h3>Le service fixe la visibilité</h3><p>Administrateur : toutes les offres. Étudiant : offres publiées. Déposant : ses offres, quel que soit leur statut. Ce filtre protège les résultats indépendamment de l’interface.</p></div>
+            <div class="file-ref"><a href="../backend/src/services/offers.service.ts">backend/src/services/offers.service.ts</a></div>
+          </li>
+          <li>
+            <span class="step-no">07</span>
+            <div><h3>Le repository lit SQLite</h3><p>La requête joint <code>offers</code> à <code>companies</code>, <code>academic_years</code> et <code>periods</code>; elle applique les filtres de visibilité puis trie par année et création, décroissantes.</p></div>
+            <div class="file-ref"><a href="../backend/src/repositories/offers.repository.ts">backend/src/repositories/offers.repository.ts</a><br><a href="../backend/src/db/migrations/001_initial.sql">backend/src/db/migrations/001_initial.sql</a></div>
+          </li>
+          <li>
+            <span class="step-no">08</span>
+            <div><h3>Les mappers préparent le DTO</h3><p>La ligne SQL devient un modèle métier, puis un DTO réduit à <code>id</code>, <code>title</code>, <code>companyShortName</code>, <code>academicYear</code>, <code>period</code> et <code>status</code>.</p></div>
+            <div class="file-ref"><a href="../backend/src/mappers/offer.mapper.ts">backend/src/mappers/offer.mapper.ts</a><br><a href="../backend/src/models/offer.ts">backend/src/models/offer.ts</a></div>
+          </li>
+          <li>
+            <span class="step-no">09</span>
+            <div><h3>React affiche le résultat</h3><p>Le tableau affiche titre, entreprise, année, période et statut. Les codes de période et de statut sont traduits en libellés français.</p></div>
+            <div class="file-ref"><a href="../frontend/src/components/OfferTable.tsx">frontend/src/components/OfferTable.tsx</a><br><a href="../frontend/src/utils/labels.ts">frontend/src/utils/labels.ts</a></div>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="filter-title">
+        <div class="section-head">
+          <h2 id="filter-title">Ajouter un filtre par période</h2>
+          <p>Le filtre doit réduire les résultats sans remplacer les règles de visibilité existantes.</p>
+        </div>
+        <table class="filter-table">
+          <thead><tr><th>Fichier</th><th>Responsabilité du changement</th></tr></thead>
+          <tbody>
+            <tr><td><a href="../frontend/src/pages/OffersPage.tsx">frontend/src/pages/OffersPage.tsx</a></td><td>Ajouter le contrôle de période et conserver sa sélection; afficher toutes les périodes par défaut.</td></tr>
+            <tr><td><a href="../frontend/src/hooks/useOffers.ts">frontend/src/hooks/useOffers.ts</a></td><td>Transmettre le filtre au service et relancer proprement le chargement lorsque sa valeur change.</td></tr>
+            <tr><td><a href="../frontend/src/services/offers.service.ts">frontend/src/services/offers.service.ts</a></td><td>Sérialiser la valeur sélectionnée en paramètre facultatif, par exemple <code>?period=P1</code>.</td></tr>
+            <tr><td><a href="../backend/src/controllers/offers.controller.ts">backend/src/controllers/offers.controller.ts</a></td><td>Lire et valider le paramètre HTTP; rejeter une valeur inconnue ou répétée avec une erreur cohérente.</td></tr>
+            <tr><td><a href="../backend/src/services/offers.service.ts">backend/src/services/offers.service.ts</a></td><td>Combiner le filtre de période avec le filtre de rôle; ne jamais laisser le paramètre contourner la visibilité.</td></tr>
+            <tr><td><a href="../backend/src/repositories/offers.repository.ts">backend/src/repositories/offers.repository.ts</a></td><td>Étendre <code>OfferFilter</code> et ajouter la condition SQL sur <code>periods.code</code>, en gardant les filtres actuels.</td></tr>
+            <tr><td><a href="../backend/API.md">backend/API.md</a></td><td>Documenter le paramètre, les valeurs acceptées (<code>P1</code>, <code>P2</code>, <code>OTHER</code>) et les erreurs possibles.</td></tr>
+            <tr><td><a href="../backend/tests/offers.test.ts">backend/tests/offers.test.ts</a></td><td>Tester le filtre pour les profils, les périodes sans résultat et les paramètres invalides; vérifier que les droits restent appliqués.</td></tr>
+            <tr><td><a href="../frontend/tests/OffersPage.test.tsx">frontend/tests/OffersPage.test.tsx</a></td><td>Tester le contrôle, le paramètre envoyé et les résultats affichés après sélection.</td></tr>
+          </tbody>
+        </table>
+        <div class="rules">
+          <article class="rule">
+            <h3>Contrat conseillé</h3>
+            <p>Un paramètre facultatif <code>period</code> accepte <code>P1</code>, <code>P2</code> ou <code>OTHER</code>. Sans paramètre, le comportement actuel reste inchangé.</p>
+          </article>
+          <article class="rule warning">
+            <h3>À préserver</h3>
+            <p>L’administrateur garde toutes ses offres dans la période choisie; l’étudiant ne voit que les offres publiées; le déposant ne voit que les siennes.</p>
+          </article>
+        </div>
+        <p class="note"><strong>Pas de migration prévue :</strong> l’offre contient déjà <code>period_id</code>, la période est reliée à son année académique et la requête joint déjà la table <code>periods</code>. La valeur de période est également présente dans les modèles et le DTO actuels.</p>
+      </section>
+
+      <section aria-labelledby="tests-title">
+        <div class="section-head">
+          <h2 id="tests-title">Garde-fous existants</h2>
+          <p>Les tests proches du parcours servent de point de départ pour vérifier une évolution.</p>
+        </div>
+        <div class="rules">
+          <article class="rule"><h3>API</h3><p><a href="../backend/tests/offers.test.ts">offers.test.ts</a> couvre authentification, accès par profil, visibilité et forme du DTO sur une base SQLite en mémoire.</p></article>
+          <article class="rule"><h3>Interface</h3><p><a href="../frontend/tests/OffersPage.test.tsx">OffersPage.test.tsx</a> couvre rendu, états vides, refus d’accès, session expirée et descriptions selon le profil avec <code>fetch</code> simulé.</p></article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>Gesta · parcours de lecture des offres</span>
+        <span>Références : <a href="architecture.md">docs/architecture.md</a> · <a href="../backend/API.md">backend/API.md</a></span>
+      </footer>
+    </main>
+  </body>
+</html>
