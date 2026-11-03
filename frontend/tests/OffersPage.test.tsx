@@ -92,6 +92,50 @@ describe("OffersPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("statut 403");
   });
 
+  it("permet à un étudiant de candidater avec un message facultatif", async () => {
+    const publishedOffer = {
+      id: 44,
+      title: "Application React de gestion de flotte",
+      companyShortName: "Lumen Digital",
+      academicYear: "2026-2027",
+      period: "P2",
+      status: "PUBLISHED",
+    };
+    const application = {
+      id: 20,
+      offerId: publishedOffer.id,
+      offerTitle: "Application React de gestion de flotte",
+      companyShortName: "Lumen Digital",
+      academicYear: "2026-2027",
+      period: "P2",
+      message: "Le sujet me motive.",
+      status: "IN_PROGRESS",
+    };
+    const fetchMock = stubFetch({
+      "/api/offers": () => Response.json([publishedOffer]),
+      "/api/applications": (_input, init) =>
+        init?.method === "POST" ? Response.json(application, { status: 201 }) : Response.json([]),
+    });
+
+    render(<OffersPage user={studentUser} token="jeton" onUnauthorized={vi.fn()} />);
+
+    const message = await screen.findByRole("textbox", {
+      name: "Message facultatif pour Application React de gestion de flotte",
+    });
+    fireEvent.change(message, { target: { value: "Le sujet me motive." } });
+    fireEvent.click(screen.getByRole("button", { name: "Candidater" }));
+
+    expect(await screen.findByText("En cours")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/applications",
+      expect.objectContaining({
+        method: "POST",
+        headers: { Authorization: "jeton", "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId: publishedOffer.id, message: "Le sujet me motive." }),
+      }),
+    );
+  });
+
   it("signale une session expirée", async () => {
     stubFetch({ "/api/offers": () => new Response(null, { status: 401 }) });
     const onUnauthorized = vi.fn();
