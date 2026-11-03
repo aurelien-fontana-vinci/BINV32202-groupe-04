@@ -1,3 +1,5 @@
+# L'ia a utilisé 4% (9.4/200 credit) durant la séance
+
 # Lors de la confection du plan, copilot ne nous a posé que 2 questions:
 - Comment gerer les retrait de candidature. On a decider de rendre un retrait de candidature definitif. lorsqu'un etudiant retire sa candidature, il ne peut plus postuler pour cette offre. 
 
