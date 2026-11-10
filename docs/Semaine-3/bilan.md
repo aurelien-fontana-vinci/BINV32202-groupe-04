@@ -1,6 +1,7 @@
 # Semaine 3 — bilan
+#### Ce bilan a été generé/completé en partie avec l'ia pour qu'il soit plus lisible et clair, pour les tableaux nottament. Tous les fichiers generés et utilisés en séance se trouve dans le dossier Semaine-3 ainsi que la discussion. Environ 15% de l'abonnement githubCopilot à été utilisé. 
 
-## Inventaire des guides et senseurs
+### Inventaire des guides et senseurs
 
 La matrice repère trois guides inférentiels et cinq senseurs computationnels.
 
@@ -17,7 +18,7 @@ La matrice repère trois guides inférentiels et cinq senseurs computationnels.
 
 Deux cases restent vides : aucun senseur inférentiel de revue IA ni guide computationnel de génération de code n’a été repéré.
 
-## Couverture EF-32 / EF-33
+### Couverture EF-32 / EF-33
 
 La [matrice de traçabilité](./Semaine-3/traceabilite-ef32-ef33.html) relie 17 cas précis à leurs assertions. Résumé :
 
@@ -36,7 +37,7 @@ La [matrice de traçabilité](./Semaine-3/traceabilite-ef32-ef33.html) relie 17 
 
 La traçabilité distingue également les validations de format (400), les erreurs de retrait (409), et les limites UI. Les tests de seed/migrations ou du filtre des offres ne sont pas présentés comme preuves d’EF-32/EF-33 lorsqu’ils ne testent pas ces comportements.
 
-## Modifications et vérifications
+### Modifications et vérifications
 
 Dans [`backend/tests/applications.test.ts`](../backend/tests/applications.test.ts), tests ajoutés ou renforcés :
 
@@ -54,7 +55,7 @@ Commandes exécutées :
 
 Aucune recette manuelle dans un navigateur n’a été réalisée. Les tests frontend utilisent des réponses `fetch` simulées ; le test long vérifie une seule taille concrète. Ces limites ne sont pas masquées par le succès de `npm run check`.
 
-## Audit des guides face à Web 2
+### Audit des guides face à Web 2
 
 Audit fondé sur les supports PDF Web 2 fournis (nom du support et numéro de diapositive) :
 
@@ -65,6 +66,6 @@ Audit fondé sur les supports PDF Web 2 fournis (nom du support et numéro de di
 
 Écarts proposés : documenter l’ordre des middlewares et le placement de l’error handler ; préciser les formulaires contrôlés, les rejets réseau et l’exposition/sensibilité d’un JWT ; expliciter les annotations TypeScript si elles sont attendues comme convention du projet. Aucun support fourni ne permet d’attribuer au cours une attente explicite sur l’accessibilité ou les tests automatisés. Les guides n’ont pas été modifiés.
 
-## Optionnel — senseur d’architecture
+### Optionnel — senseur d’architecture
 
 Proposition non implémentée : un test Vitest qui analyse les fichiers `backend/src/services/` avec l’AST TypeScript et échoue si un service importe `Request` ou `Response` depuis Express. Il s’exécuterait dans `npm test`/`npm run check` et signalerait fichier, ligne et symbole. Exemple : `import type { Request } from "express"` dans un service. Limites : ne détecterait pas tous les couplages indirects ; petit coût de maintenance AST, non mesuré.

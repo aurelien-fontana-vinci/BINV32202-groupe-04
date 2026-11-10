@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Matrice interactive des guides et senseurs du harnais agentique du dépôt Gesta.">
+    <title>Guides et senseurs | Harnais agentique Gesta</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f5f7f2;
+        --surface: #fff;
+        --ink: #1d2b27;
+        --muted: #61706a;
+        --line: #dce4dd;
+        --green: #146451;
+        --green-soft: #e5f1eb;
+        --coral: #bd513b;
+        --coral-soft: #f8e9e4;
+        --gold: #b47d13;
+        --gold-soft: #fbf1d9;
+        --blue: #45628f;
+        --blue-soft: #e9eef7;
+        --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        --serif: Georgia, "Times New Roman", serif;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      a { color: var(--green); text-underline-offset: 3px; }
+      a:hover { color: var(--coral); }
+      button, input { font: inherit; }
+      code, .eyebrow, .tag, .axis-label { font-family: var(--mono); }
+      code { font-size: .88em; overflow-wrap: anywhere; }
+
+      .masthead {
+        padding: 18px max(24px, calc((100% - 1180px) / 2));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 5px solid var(--green);
+        background: var(--ink);
+        color: #f7faf6;
+      }
+      .brand { font-weight: 750; letter-spacing: .04em; }
+      .masthead small { color: #b9c9c1; font-family: var(--mono); font-size: .72rem; }
+      main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 48px 0 72px; }
+      .intro { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(230px, .7fr); gap: 36px; align-items: end; }
+      .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .09em; font-size: .75rem; font-weight: 700; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { max-width: 760px; margin-bottom: 14px; font: 500 clamp(2.4rem, 5vw, 4rem)/1.04 var(--serif); }
+      .lead { max-width: 720px; margin: 0; color: var(--muted); font-size: 1.08rem; }
+      .definition { padding: 12px 0 12px 18px; border-left: 3px solid var(--coral); color: var(--muted); font-size: .9rem; }
+      .definition strong { color: var(--ink); }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 14px 20px;
+        margin: 34px 0 18px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .search { display: grid; flex: 1 1 230px; gap: 5px; }
+      .search label, .control-label { color: var(--muted); font-size: .78rem; font-weight: 700; }
+      .search input { width: 100%; padding: 9px 11px; border: 1px solid #aebbb2; border-radius: 3px; background: #fff; color: var(--ink); }
+      .search input:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid #e0a92e; outline-offset: 2px; }
+      .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+      button {
+        padding: 8px 11px;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        background: var(--paper);
+        color: var(--ink);
+        cursor: pointer;
+        font-size: .82rem;
+      }
+      button:hover, button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+      .control-action { border-color: var(--green); color: var(--green); }
+      .control-action:hover { background: var(--green); color: white; }
+      .status { display: flex; justify-content: space-between; gap: 16px; margin: 0 0 10px; color: var(--muted); font-size: .82rem; }
+      .status p { margin: 0; }
+
+      .matrix {
+        display: grid;
+        grid-template-columns: 152px minmax(0, 1fr) minmax(0, 1fr);
+        border: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .corner, .column-head { min-height: 84px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
+      .corner { background: #e9eee8; }
+      .column-head { border-left: 1px solid var(--line); }
+      .column-head.guide { border-top: 4px solid var(--green); }
+      .column-head.sensor { border-top: 4px solid var(--coral); }
+      .column-head strong { display: block; font-size: 1.04rem; }
+      .column-head span, .corner span { color: var(--muted); font-size: .8rem; }
+      .row-head {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        padding: 18px;
+        border-top: 1px solid var(--line);
+        background: #e9eee8;
+      }
+      .row-head strong { line-height: 1.25; }
+      .row-head span { color: var(--muted); font-size: .78rem; }
+      .row-head .axis-label { color: var(--blue); font-size: .68rem; font-weight: 700; text-transform: uppercase; }
+      .cell { min-width: 0; padding: 14px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+      .cell[data-axis="guide"] { background: linear-gradient(140deg, #f8fbf8, #fff 60%); }
+      .cell[data-axis="sensor"] { background: linear-gradient(140deg, #fff9f6, #fff 60%); }
+      .mechanism { margin-bottom: 10px; padding: 16px; border: 1px solid var(--line); background: #fff; box-shadow: 0 2px 6px rgb(29 43 39 / 3%); }
+      .mechanism:last-child { margin-bottom: 0; }
+      .mechanism[hidden] { display: none; }
+      .mechanism h3 { margin: 5px 0 7px; font-size: 1rem; line-height: 1.35; }
+      .mechanism p { margin: 0 0 9px; color: #4f5f57; font-size: .88rem; }
+      .mechanism p:last-child { margin-bottom: 0; }
+      .mechanism .evidence, .mechanism .session-result { font-size: .82rem; }
+      .mechanism .evidence strong { color: var(--ink); }
+      .mechanism .session-result { padding: 8px 10px; border-left: 3px solid var(--blue); background: var(--blue-soft); color: #354c72; }
+      .mechanism .session-result strong { color: #273b5d; }
+      .absence-note { margin: 14px 0 0; padding: 14px 18px; background: var(--gold-soft); color: #5d4a24; font-size: .88rem; }
+      .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+      .tag { padding: 2px 7px; border-radius: 2px; font-size: .66rem; font-weight: 700; }
+      .tag.guide { background: var(--green-soft); color: var(--green); }
+      .tag.sensor { background: var(--coral-soft); color: var(--coral); }
+      .tag.ai { background: var(--blue-soft); color: var(--blue); }
+      .tag.exec { background: var(--gold-soft); color: #80580c; }
+      .mechanism details { margin-top: 10px; border-top: 1px solid #edf0ed; padding-top: 8px; }
+      .mechanism summary { color: var(--green); cursor: pointer; font-size: .8rem; font-weight: 700; }
+      .mechanism details p { margin-top: 8px; font-size: .8rem; }
+      .mechanism details a { font-family: var(--mono); font-size: .76rem; }
+      .empty-cell { padding: 18px; border: 1px dashed #c3cdc5; background: rgb(255 255 255 / 65%); color: var(--muted); font-size: .86rem; }
+      .empty-cell strong { display: block; margin-bottom: 5px; color: var(--ink); }
+      .empty-results { padding: 22px; color: var(--muted); text-align: center; }
+
+      .reading-note { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+      .reading-note article { padding: 17px 19px; border-left: 4px solid var(--gold); background: var(--gold-soft); }
+      .reading-note h2 { margin: 0 0 5px; font-size: .92rem; }
+      .reading-note p { margin: 0; color: #5d4a24; font-size: .84rem; }
+      footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; }
+
+      @media (max-width: 760px) {
+        main { padding-top: 34px; }
+        .intro { grid-template-columns: 1fr; gap: 18px; }
+        .matrix { grid-template-columns: 108px minmax(0, 1fr) minmax(0, 1fr); }
+        .corner, .column-head { min-height: 76px; padding: 12px; }
+        .column-head strong { font-size: .92rem; }
+        .column-head span { font-size: .72rem; }
+        .row-head { padding: 12px 9px; }
+        .row-head strong { font-size: .84rem; }
+        .row-head span { font-size: .7rem; }
+        .cell { padding: 8px; }
+        .mechanism { padding: 11px; }
+      }
+      @media (max-width: 540px) {
+        .masthead { align-items: flex-start; flex-direction: column; gap: 3px; }
+        main { width: min(100% - 24px, 1180px); }
+        .matrix { grid-template-columns: 1fr 1fr; }
+        .corner { display: none; }
+        .column-head { min-height: 70px; }
+        .row-head { grid-column: 1 / -1; min-height: 55px; border-top: 4px solid var(--blue); }
+        .cell { min-height: 100px; }
+        .mechanism h3 { font-size: .9rem; }
+        .mechanism p { font-size: .81rem; }
+        .reading-note { grid-template-columns: 1fr; }
+        .status { flex-direction: column; gap: 3px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="brand">GESTA <span aria-hidden="true">/</span> HARNAIS AGENTIQUE</div>
+      <small>Repérage dans le dépôt · Semaine 3</small>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Feedforward × feedback</p>
+          <h1 id="page-title">Guides et senseurs du dépôt</h1>
+          <p class="lead">Un guide oriente le travail avant ou pendant la production. Un senseur observe le code ou son comportement et renvoie un résultat. Voici les mécanismes repérés dans Gesta, classés selon leur nature.</p>
+        </div>
+        <aside class="definition">
+          <strong>Inférentiel</strong> : consigne ou retour interprété par une personne ou une IA.<br>
+          <strong>Computationnel</strong> : règle appliquée ou résultat produit par un outil exécutable.
+        </aside>
+      </section>
+
+      <section aria-label="Filtres de la matrice">
+        <div class="controls">
+          <div class="search">
+            <label for="search">Rechercher un mécanisme</label>
+            <input id="search" type="search" placeholder="Ex. tests, AGENTS.md…" autocomplete="off">
+          </div>
+          <div>
+            <span class="control-label" id="filter-label">Afficher</span>
+            <div class="filters" role="group" aria-labelledby="filter-label">
+              <button type="button" data-filter="all" aria-pressed="true">Tout</button>
+              <button type="button" data-filter="guide" aria-pressed="false">Guides</button>
+              <button type="button" data-filter="sensor" aria-pressed="false">Senseurs</button>
+              <button type="button" data-filter="inferential" aria-pressed="false">Inférentiel</button>
+              <button type="button" data-filter="computational" aria-pressed="false">Computationnel</button>
+            </div>
+          </div>
+          <button type="button" class="control-action" id="toggle-details" aria-expanded="false">Développer toutes les fiches</button>
+        </div>
+        <div class="status" aria-live="polite">
+          <p id="result-count">8 mécanismes affichés</p>
+          <p>Chaque fiche donne un exemple et le statut vérifié en séance.</p>
+        </div>
+      </section>
+
+      <section class="matrix" id="matrix" aria-label="Matrice des guides et senseurs">
+        <div class="corner"><span>Nature ↓</span><br><span>Rôle →</span></div>
+        <div class="column-head guide">
+          <strong>Guide · feedforward</strong>
+          <span>Oriente l’agent en amont ou pendant le travail</span>
+        </div>
+        <div class="column-head sensor">
+          <strong>Senseur · feedback</strong>
+          <span>Observe la production et en signale le résultat</span>
+        </div>
+
+        <div class="row-head">
+          <span class="axis-label">Inférentiel</span>
+          <strong>Interprété par une IA ou une personne</strong>
+          <span>Contexte, consignes, jugement</span>
+        </div>
+        <div class="cell" data-axis="guide">
+          <article class="mechanism" data-kind="guide" data-nature="inferential">
+            <div class="tags"><span class="tag guide">Guide</span><span class="tag ai">Inférentiel</span></div>
+            <h3>Instructions de travail</h3>
+            <p><code>AGENTS.md</code> donne à l’agent des consignes explicites : documents à lire, conventions de couches, tests à préserver et validation attendue.</p>
+            <p class="evidence"><strong>Exemple :</strong> les services ne doivent pas dépendre des objets Express <code>Request</code> ou <code>Response</code>.</p>
+            <p class="session-result"><strong>Séance :</strong> fichier ouvert et consigne consultée pendant cette exploration. Le guide est textuel : aucun test ne vérifie automatiquement que l’agent le suit.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p>Le fichier à la racine est le seul fichier d’instructions agent dédié repéré. Il est complété par la documentation du projet : <a href="../../../README.md">README.md</a> et <a href="../../../docs/architecture.md">docs/architecture.md</a>.</p>
+              <p><a href="../../../AGENTS.md">Ouvrir AGENTS.md</a></p>
+            </details>
+          </article>
+          <article class="mechanism" data-kind="guide" data-nature="inferential">
+            <div class="tags"><span class="tag guide">Guide de contexte</span><span class="tag ai">Inférentiel</span></div>
+            <h3>Contrat, architecture et exigences</h3>
+            <p>La documentation décrit les routes, les choix d’architecture et les besoins métier. L’agent peut interpréter ce contexte pour prendre des décisions adaptées.</p>
+            <p class="evidence"><strong>Exemple :</strong> la doc API précise qu’une requête invalide peut répondre <code>400 INVALID_QUERY</code> avec un message JSON défini.</p>
+            <p class="session-result"><strong>Séance :</strong> les documents cités ont été ouverts et consultés ; ils décrivent des contrats, ils ne sont pas exécutés comme des contrôles.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p>Sources : <a href="../../../backend/API.md">backend/API.md</a>, <a href="../../../docs/architecture.md">docs/architecture.md</a> et <a href="../../../docs/cdc_gesta_developpement.md">docs/cdc_gesta_developpement.md</a>.</p>
+            </details>
+          </article>
+          <article class="mechanism" data-kind="guide" data-nature="inferential">
+            <div class="tags"><span class="tag guide">Guide humain</span><span class="tag ai">Inférentiel</span></div>
+            <h3>Liste de vérification des pull requests</h3>
+            <p>Le modèle de PR rappelle les vérifications et informations attendues. C’est une checklist à interpréter et cocher, pas une règle exécutée automatiquement.</p>
+            <p class="evidence"><strong>Exemple :</strong> la PR demande que <code>npm run check</code> passe et que des tests couvrent les erreurs pertinentes, telles que 400, 401, 403 et 404.</p>
+            <p class="session-result"><strong>Séance :</strong> modèle ouvert et consignes vérifiées ; la checklist n’a pas été soumise à une PR dans cette exploration.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p><a href="../../../.github/pull_request_template.md">.github/pull_request_template.md</a> demande notamment tests, droits, documentation API et validation navigateur.</p>
+            </details>
+          </article>
+        </div>
+        <div class="cell" data-axis="sensor" aria-label="Aucun senseur inférentiel automatique repéré"></div>
+
+        <div class="row-head">
+          <span class="axis-label">Computationnel</span>
+          <strong>Règles ou calculs exécutables</strong>
+          <span>Outils et résultats reproductibles</span>
+        </div>
+        <div class="cell" data-axis="guide" aria-label="Aucun guide computationnel dédié repéré"></div>
+        <div class="cell" data-axis="sensor">
+          <article class="mechanism" data-kind="sensor" data-nature="computational">
+            <div class="tags"><span class="tag sensor">Tests</span><span class="tag exec">Computationnel</span></div>
+            <h3>Tests automatisés</h3>
+            <p>Vitest, Supertest et Testing Library exécutent des scénarios et signalent les comportements qui ne correspondent pas aux attentes.</p>
+            <p class="evidence"><strong>Exemple :</strong> <code>permissions.test.ts</code> vérifie qu’un contact promoteur/signataire ne peut pas lister les offres (<code>false</code>), tandis qu’un étudiant y est autorisé (<code>true</code>).</p>
+            <p class="session-result"><strong>Cette séance :</strong> oui, <code>npm run check</code> a réussi : 10 fichiers et 133 tests backend, 8 fichiers et 52 tests frontend. Un succès antérieur est aussi consigné dans le <a href="../../../docs/Semaine-2/bilan.md">bilan de Semaine 2</a>.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p>Lancer avec <code>npm test</code>. Les tests backend utilisent SQLite en mémoire ; ceux du frontend simulent les réponses HTTP. Le résultat de séance est rapporté dans <a href="../../../docs/Semaine-2/bilan.md">docs/Semaine-2/bilan.md</a>.</p>
+              <p><a href="../../tests/permissions.test.ts">Exemple de test des permissions</a></p>
+              <p><a href="../../../backend/package.json">Scripts backend</a> · <a href="../../../frontend/package.json">Scripts frontend</a></p>
+            </details>
+          </article>
+          <article class="mechanism" data-kind="sensor" data-nature="computational">
+            <div class="tags"><span class="tag sensor">Lint</span><span class="tag exec">Computationnel</span></div>
+            <h3>Oxlint</h3>
+            <p>Vérifie des règles de qualité statiques et signale les erreurs ou avertissements, dont les variables inutilisées et certains usages de TypeScript.</p>
+            <p class="evidence"><strong>Exemple :</strong> le backend interdit <code>any</code> explicite et impose <code>eqeqeq</code> ; le frontend traite les règles des hooks React comme erreurs.</p>
+            <p class="session-result"><strong>Cette séance :</strong> oui, le lint a été exécuté sans échec dans <code>npm run check</code>. Le bilan de Semaine 2 rapporte également un succès antérieur.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p>Lancer avec <code>npm run lint</code>. Le dépôt configure Oxlint côté backend et frontend, avec les avertissements interdits.</p>
+              <p><a href="../../../backend/.oxlintrc.json">Configuration Oxlint backend</a> · <a href="../../../frontend/.oxlintrc.json">Configuration Oxlint frontend</a></p>
+            </details>
+          </article>
+          <article class="mechanism" data-kind="sensor" data-nature="computational">
+            <div class="tags"><span class="tag sensor">Vérification de types</span><span class="tag exec">Computationnel</span></div>
+            <h3>TypeScript</h3>
+            <p>Le compilateur vérifie la cohérence des types et retourne les erreurs de type détectées.</p>
+            <p class="evidence"><strong>Exemple :</strong> les configurations activent <code>strict</code> et <code>noUncheckedIndexedAccess</code> ; une valeur possiblement absente doit être traitée comme telle.</p>
+            <p class="session-result"><strong>Cette séance :</strong> oui, les vérifications TypeScript ont réussi dans <code>npm run check</code>. Le bilan de Semaine 2 rapporte également un succès antérieur.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p>Lancer avec <code>npm run typecheck</code>. Le backend utilise <code>tsc --noEmit</code> et le frontend <code>tsc -b</code>.</p>
+              <p><a href="../../../backend/tsconfig.json">Configuration TypeScript backend</a> · <a href="../../../frontend/tsconfig.json">Configuration TypeScript frontend</a></p>
+            </details>
+          </article>
+          <article class="mechanism" data-kind="sensor" data-nature="computational">
+            <div class="tags"><span class="tag sensor">Compilation</span><span class="tag exec">Computationnel</span></div>
+            <h3>Build backend et frontend</h3>
+            <p>La compilation révèle les problèmes empêchant de produire les sorties exécutables du backend et les fichiers du frontend.</p>
+            <p class="evidence"><strong>Exemple :</strong> le build backend compile avec <code>tsc</code> puis copie les migrations ; le frontend lance <code>tsc -b</code> puis <code>vite build</code>.</p>
+            <p class="session-result"><strong>Cette séance :</strong> oui, les builds backend et frontend ont réussi dans <code>npm run check</code>. Le bilan de Semaine 2 rapporte également un succès antérieur.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p>Lancer avec <code>npm run build</code> ; le frontend compile TypeScript puis lance Vite.</p>
+              <p><a href="../../../backend/package.json">Scripts backend</a> · <a href="../../../frontend/package.json">Scripts frontend</a></p>
+            </details>
+          </article>
+          <article class="mechanism" data-kind="sensor" data-nature="computational">
+            <div class="tags"><span class="tag sensor">Contrôle global</span><span class="tag exec">Computationnel</span></div>
+            <h3>Commande <code>npm run check</code></h3>
+            <p>Orchestre le lint, la vérification TypeScript, les tests et le build : un retour synthétique sur plusieurs dimensions du résultat.</p>
+            <p class="evidence"><strong>Exemple de résultat :</strong> la chaîne s’arrête à la première commande en échec ; un succès final signifie que les quatre étapes ont réussi.</p>
+            <p class="session-result"><strong>Cette séance :</strong> oui, exécutée à la racine avec succès ; lint, types, tests et builds sont passés. Le bilan de Semaine 2 rapporte aussi un succès antérieur.</p>
+            <details>
+              <summary>Détails et sources</summary>
+              <p>La commande est définie dans le <a href="../../../package.json">package.json racine</a> et documentée dans le <a href="../../../README.md">README</a>.</p>
+            </details>
+          </article>
+        </div>
+      </section>
+      <p class="absence-note">Les deux cases volontairement vides correspondent aux mécanismes non repérés : aucun guide computationnel dédié (p. ex. générateur de code) ni senseur de revue IA automatisée n’a été trouvé dans le dépôt.</p>
+      <p class="empty-results" id="empty-results" hidden>Aucun mécanisme ne correspond à cette recherche.</p>
+
+      <section class="reading-note" aria-label="À retenir">
+        <article>
+          <h2>Un guide n’est pas nécessairement exécutable</h2>
+          <p><code>AGENTS.md</code> oriente le raisonnement de l’agent ; son application dépend de l’interprétation du texte par celui-ci. Le fait de consulter le guide ne prouve pas automatiquement le respect de toutes ses consignes.</p>
+        </article>
+        <article>
+          <h2>Un senseur n’explique pas toujours la correction</h2>
+          <p>Tests, lint, types et build produisent des signaux reproductibles, mais les diagnostics demandent souvent une interprétation pour choisir la correction.</p>
+        </article>
+      </section>
+
+      <footer>
+        Inventaire fondé sur les fichiers et commandes visibles dans le dépôt au moment de l’exploration. Une case vide signifie qu’aucun mécanisme correspondant n’a été repéré, non que ce type de mécanisme serait impossible.
+      </footer>
+    </main>
+
+    <script>
+      const cards = [...document.querySelectorAll(".mechanism")];
+      const search = document.querySelector("#search");
+      const count = document.querySelector("#result-count");
+      const emptyResults = document.querySelector("#empty-results");
+      const filterButtons = [...document.querySelectorAll("[data-filter]")];
+      const toggleDetails = document.querySelector("#toggle-details");
+      let activeFilter = "all";
+      let detailsExpanded = false;
+
+      function updateCards() {
+        const query = search.value.trim().toLocaleLowerCase("fr");
+        let visibleCount = 0;
+
+        for (const card of cards) {
+          const matchesFilter = activeFilter === "all"
+            || card.dataset.kind === activeFilter
+            || card.dataset.nature === activeFilter;
+          const matchesSearch = card.textContent.toLocaleLowerCase("fr").includes(query);
+          card.hidden = !matchesFilter || !matchesSearch;
+          if (!card.hidden) visibleCount += 1;
+        }
+
+        count.textContent = `${visibleCount} entrée${visibleCount === 1 ? "" : "s"} affichée${visibleCount === 1 ? "" : "s"}`;
+        emptyResults.hidden = visibleCount !== 0;
+      }
+
+      for (const button of filterButtons) {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          for (const filterButton of filterButtons) {
+            filterButton.setAttribute("aria-pressed", String(filterButton === button));
+          }
+          updateCards();
+        });
+      }
+
+      search.addEventListener("input", updateCards);
+      toggleDetails.addEventListener("click", () => {
+        detailsExpanded = !detailsExpanded;
+        for (const card of cards) {
+          const details = card.querySelector("details");
+          details.open = detailsExpanded;
+        }
+        toggleDetails.setAttribute("aria-expanded", String(detailsExpanded));
+        toggleDetails.textContent = detailsExpanded ? "Replier toutes les fiches" : "Développer toutes les fiches";
+      });
+
+      updateCards();
+    </script>
+  </body>
+</html>
