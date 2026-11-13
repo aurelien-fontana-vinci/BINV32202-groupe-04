@@ -45,8 +45,28 @@ describe("GET /applications", () => {
         }),
       ]),
     );
-    expect(response.body).toHaveLength(2);
+    expect(response.body.map((application: { id: number }) => application.id).sort()).toEqual(
+      [APPLICATION.INES_FLEET_APP, APPLICATION.INES_BILLING_API].sort(),
+    );
     expect(response.body.every((application: { appliedAt?: string }) => !("appliedAt" in application))).toBe(true);
+  });
+
+  it("retourne les quatre statuts possibles dans les listes de leurs étudiants", async () => {
+    const students = [
+      [STUDENT.LUCAS_DUPONT, "IN_PROGRESS"],
+      [STUDENT.MATEUSZ_KOWALSKI, "SELECTED"],
+      [STUDENT.LEA_MERTENS, "REJECTED"],
+      [STUDENT.INES_HADDAD, "WITHDRAWN"],
+    ] as const;
+
+    for (const [studentId, expectedStatus] of students) {
+      const response = await applicationsAs("STUDENT", studentId);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(
+        expect.arrayContaining([expect.objectContaining({ status: expectedStatus })]),
+      );
+    }
   });
 });
 
@@ -74,6 +94,17 @@ describe("POST /applications", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.message).toBeNull();
+  });
+
+  it("accepte un message long sans limite métier arbitraire", async () => {
+    const message = "c".repeat(4_096);
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.DMYTRO_KOVALENKO))
+      .send({ offerId: OFFER.FLEET_APP, message });
+
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBe(message);
   });
 
   it("refuse une offre non publiée et une offre inexistante", async () => {
@@ -137,13 +168,29 @@ describe("POST /applications/:id/withdraw", () => {
     expect(response.body.status).toBe("WITHDRAWN");
   });
 
-  it("refuse le retrait d'une candidature traitée", async () => {
+  it.each([
+    ["retenue", APPLICATION.MATEUSZ_CLOUD_MIGRATION, STUDENT.MATEUSZ_KOWALSKI],
+    ["non retenue", APPLICATION.LEA_CLOUD_MIGRATION, STUDENT.LEA_MERTENS],
+  ] as const)("refuse le retrait d'une candidature %s", async (_status, applicationId, studentId) => {
     const response = await request(app)
-      .post(`/applications/${APPLICATION.MATEUSZ_CLOUD_MIGRATION}/withdraw`)
-      .set("Authorization", tokenFor("STUDENT", STUDENT.MATEUSZ_KOWALSKI));
+      .post(`/applications/${applicationId}/withdraw`)
+      .set("Authorization", tokenFor("STUDENT", studentId));
 
     expect(response.status).toBe(409);
     expect(response.body.error.code).toBe("APPLICATION_ALREADY_PROCESSED");
+  });
+
+  it("refuse le retrait sans session ou avec un profil non étudiant", async () => {
+    const withoutSession = await request(app).post(
+      `/applications/${APPLICATION.LUCAS_FLEET_APP}/withdraw`,
+    );
+    const asAdmin = await request(app)
+      .post(`/applications/${APPLICATION.LUCAS_FLEET_APP}/withdraw`)
+      .set("Authorization", tokenFor("ADMIN", 1));
+
+    expect(withoutSession.status).toBe(401);
+    expect(asAdmin.status).toBe(403);
+    expect(asAdmin.body.error.code).toBe("FORBIDDEN");
   });
 
   it("ne révèle pas et ne retire pas la candidature d'un autre étudiant", async () => {

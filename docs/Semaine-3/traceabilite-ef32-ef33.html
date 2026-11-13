@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Matrice de traçabilité entre EF-32/EF-33 travaillées en Semaine 2 et les tests existants de Gesta.">
+    <title>Traçabilité EF-32 et EF-33 | Gesta</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f5f7f2;
+        --surface: #fff;
+        --ink: #1d2b27;
+        --muted: #61706a;
+        --line: #dce4dd;
+        --green: #146451;
+        --green-soft: #e5f1eb;
+        --coral: #bd513b;
+        --coral-soft: #f8e9e4;
+        --gold: #8a620f;
+        --gold-soft: #fbf1d9;
+        --blue: #45628f;
+        --blue-soft: #e9eef7;
+        --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        --serif: Georgia, "Times New Roman", serif;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      a { color: var(--green); text-underline-offset: 3px; }
+      a:hover { color: var(--coral); }
+      code, .eyebrow, .tag, th { font-family: var(--mono); }
+      code { font-size: .88em; overflow-wrap: anywhere; }
+      .masthead {
+        padding: 18px max(24px, calc((100% - 1180px) / 2));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 5px solid var(--green);
+        background: var(--ink);
+        color: #f7faf6;
+      }
+      .brand { font-weight: 750; letter-spacing: .04em; }
+      .masthead small { color: #b9c9c1; font-family: var(--mono); font-size: .72rem; }
+      main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 48px 0 72px; }
+      .intro { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, .7fr); gap: 36px; align-items: end; }
+      .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .09em; font-size: .75rem; font-weight: 700; }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 { max-width: 760px; margin-bottom: 14px; font: 500 clamp(2.4rem, 5vw, 4rem)/1.04 var(--serif); }
+      .lead { max-width: 730px; margin: 0; color: var(--muted); font-size: 1.08rem; }
+      .scope { padding: 13px 0 13px 18px; border-left: 3px solid var(--coral); color: var(--muted); font-size: .9rem; }
+      .scope strong { color: var(--ink); }
+      .note { margin: 28px 0 20px; padding: 15px 18px; border: 1px solid #e8d49c; background: var(--gold-soft); color: #5d4a24; font-size: .9rem; }
+      .controls { display: flex; flex-wrap: wrap; align-items: end; gap: 14px 20px; margin: 24px 0 14px; padding: 16px; border: 1px solid var(--line); background: var(--surface); }
+      .search { display: grid; flex: 1 1 230px; gap: 5px; }
+      .search label, .control-label { color: var(--muted); font-size: .78rem; font-weight: 700; }
+      input { width: 100%; padding: 9px 11px; border: 1px solid #aebbb2; border-radius: 3px; background: #fff; color: var(--ink); font: inherit; }
+      input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #e0a92e; outline-offset: 2px; }
+      .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+      button { padding: 8px 11px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); color: var(--ink); cursor: pointer; font: inherit; font-size: .82rem; }
+      button:hover, button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: white; }
+      .count { margin: 0 0 10px; color: var(--muted); font-size: .82rem; }
+      .table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+      table { width: 100%; min-width: 950px; border-collapse: collapse; font-size: .86rem; }
+      th, td { padding: 14px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+      th { background: #e9eee8; color: #35443e; font-size: .71rem; letter-spacing: .03em; text-transform: uppercase; }
+      tr:last-child td { border-bottom: 0; }
+      td:first-child { width: 17%; }
+      td:nth-child(2) { width: 29%; }
+      td:nth-child(3) { width: 38%; }
+      td:last-child { width: 16%; }
+      .req { display: block; margin-bottom: 4px; color: var(--green); font-family: var(--mono); font-size: .7rem; font-weight: 700; }
+      .requirement { font-weight: 700; }
+      .test-list { margin: 0; padding-left: 18px; }
+      .test-list li + li { margin-top: 8px; }
+      .test-list a { font-family: var(--mono); font-size: .78rem; }
+      .test-list span { display: block; margin-top: 2px; color: var(--muted); font-size: .8rem; }
+      .result { margin-top: 8px; padding: 8px 10px; border-left: 3px solid var(--blue); background: var(--blue-soft); color: #354c72; font-size: .8rem; }
+      .status { display: inline-block; padding: 3px 8px; border-radius: 2px; font-size: .71rem; font-weight: 750; white-space: nowrap; }
+      .status.covered { background: var(--green-soft); color: var(--green); }
+      .status.partial { background: var(--gold-soft); color: #80580c; }
+      .status.gap { background: var(--coral-soft); color: #943d2b; }
+      tr[hidden] { display: none; }
+      .empty { padding: 20px; color: var(--muted); text-align: center; }
+      .interpretation { margin-top: 24px; padding: 20px 22px; border-left: 4px solid var(--blue); background: var(--blue-soft); }
+      .interpretation h2 { margin-bottom: 8px; font: 500 1.45rem/1.15 var(--serif); }
+      .interpretation ul { margin: 0; padding-left: 20px; }
+      .interpretation li + li { margin-top: 5px; }
+      footer { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; }
+      @media (max-width: 760px) {
+        main { padding-top: 34px; }
+        .intro { grid-template-columns: 1fr; gap: 18px; }
+      }
+      @media (max-width: 540px) {
+        .masthead { align-items: flex-start; flex-direction: column; gap: 3px; }
+        main { width: min(100% - 24px, 1180px); }
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    </style>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="brand">GESTA <span aria-hidden="true">/</span> TRAÇABILITÉ DES TESTS</div>
+      <small>EF-32 · EF-33 · Semaine 3</small>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Exigences → tests → limites de couverture</p>
+          <h1 id="page-title">Les candidatures à l’épreuve des tests</h1>
+          <p class="lead">Cette matrice relie les exigences EF-32 et EF-33 travaillées à la Semaine 2 aux cas de test réellement présents. Un test vert atteste seulement le scénario qu’il exécute, pas l’ensemble de l’exigence.</p>
+        </div>
+        <aside class="scope">
+          <strong>Source des exigences</strong><br>
+          Plan de séance : <a href="../../../docs/Semaine-2/plan.md">docs/Semaine-2/plan.md</a>.<br>
+          Le retrait définitif est une décision métier confirmée pendant la séance.
+        </aside>
+      </section>
+
+      <p class="note"><strong>Lecture :</strong> « Couvert » signifie qu’un test vérifie directement le comportement indiqué. « Partiel » indique une vérification d’une partie du parcours, d’un seul état ou d’une seule couche. « Lacune » signifie qu’aucun test correspondant n’a été trouvé. Les tests front utilisent fetch simulé : ils ne constituent pas une validation dans un navigateur réel.</p>
+
+      <section aria-label="Filtres de traçabilité">
+        <div class="controls">
+          <div class="search">
+            <label for="search">Rechercher une exigence, un test ou un fichier</label>
+            <input id="search" type="search" placeholder="Ex. retrait, ApplicationsPage…" autocomplete="off">
+          </div>
+          <div>
+            <span class="control-label" id="filter-label">Couverture</span>
+            <div class="filters" role="group" aria-labelledby="filter-label">
+              <button type="button" data-filter="all" aria-pressed="true">Tout</button>
+              <button type="button" data-filter="covered" aria-pressed="false">Couverte</button>
+              <button type="button" data-filter="partial" aria-pressed="false">Partielle</button>
+              <button type="button" data-filter="gap" aria-pressed="false">Lacune</button>
+            </div>
+          </div>
+        </div>
+        <p class="count" id="count" aria-live="polite">17 cas affichés</p>
+      </section>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Exigence · cas précis · résultat attendu</th>
+              <th scope="col">Test existant (fichier et nom)</th>
+              <th scope="col">Assertions utiles</th>
+              <th scope="col">Couverture</th>
+            </tr>
+          </thead>
+          <tbody id="requirements">
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · NORMAL</span><span class="requirement">Étudiant + offre publiée + message valide → candidature créée.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« crée une candidature avec un message facultatif »</span></li><li><a href="../../../frontend/tests/OffersPage.test.tsx">OffersPage.test.tsx</a><span>« permet à un étudiant de candidater avec un message facultatif »</span></li></ul></td>
+              <td>API : <code>201</code>, offre/titre correspondants, message espaces retirés (<code>"Le sujet me motive."</code>), statut <code>IN_PROGRESS</code>. UI : le POST contient jeton et corps JSON attendus, puis « En cours » est affiché.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Assertions API + interface à fetch simulé.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · NORMAL</span><span class="requirement">Le message peut être omis.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« accepte une candidature sans message »</span></li></ul></td>
+              <td><code>status === 201</code> et <code>response.body.message === null</code>.</td>
+              <td><span class="status covered">Couvert</span><div class="result">API vérifiée. Le parcours UI sans message n’a pas de test dédié.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · REFUS</span><span class="requirement">Offre non publiée → candidature refusée.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« refuse une offre non publiée et une offre inexistante »</span></li></ul></td>
+              <td>Pour l’offre non publiée : <code>409</code> et code <code>OFFER_NOT_PUBLISHED</code>.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Cas API explicite.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · LIMITE</span><span class="requirement">Offre inexistante → aucune candidature créée.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« refuse une offre non publiée et une offre inexistante »</span></li></ul></td>
+              <td>Pour l’id <code>999</code> : <code>404</code> et code <code>OFFER_NOT_FOUND</code>.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Cas frontière API testé, complément au texte de EF-32.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · REFUS</span><span class="requirement">Un profil autre qu’étudiant ne peut pas candidater.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« refuse un utilisateur qui n'est pas étudiant »</span></li></ul></td>
+              <td>POST authentifié comme administrateur : <code>403</code>.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Règle d’autorisation vérifiée à l’API.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · RETRAIT · NORMAL</span><span class="requirement">Candidature IN_PROGRESS appartenant à l’étudiant → statut WITHDRAWN.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« retire une candidature en cours »</span></li><li><a href="../../../frontend/tests/ApplicationsPage.test.tsx">ApplicationsPage.test.tsx</a><span>« affiche les statuts et permet de retirer uniquement une candidature en cours »</span></li></ul></td>
+              <td>API : <code>200</code>, statut <code>WITHDRAWN</code>. UI : bouton appelé sur <code>/api/applications/1/withdraw</code>, réponse simulée actualise l’affichage et retire le bouton.</td>
+              <td><span class="status covered">Couvert</span><div class="result">API et interface simulée.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · RETRAIT · REFUS</span><span class="requirement">Une candidature SELECTED ne peut pas être retirée.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« refuse le retrait d'une candidature retenue » (cas paramétré)</span></li></ul></td>
+              <td>Réponse <code>409</code> avec <code>APPLICATION_ALREADY_PROCESSED</code>. Échouerait si un statut sélectionné devenait retirable.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Test API ajouté pour cet état.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · RETRAIT · REFUS</span><span class="requirement">Une candidature REJECTED ne peut pas être retirée.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« refuse le retrait d'une candidature non retenue » (cas paramétré)</span></li></ul></td>
+              <td>Réponse <code>409</code> avec <code>APPLICATION_ALREADY_PROCESSED</code>. Échouerait si un statut rejeté devenait retirable.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Test API ajouté ; retrait refusé sur les deux statuts traités.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · RETRAIT · REFUS</span><span class="requirement">Un étudiant ne peut pas retirer la candidature d’un autre.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« ne révèle pas et ne retire pas la candidature d'un autre étudiant »</span></li></ul></td>
+              <td>Pour l’id de candidature de Lucas appelé par Inès : <code>404</code> et <code>APPLICATION_NOT_FOUND</code>.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Le résultat vérifie le cloisonnement sans révéler l’existence.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · RETRAIT · DROITS</span><span class="requirement">Retirer exige une session étudiante.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« refuse le retrait sans session ou avec un profil non étudiant » (test ajouté)</span></li></ul></td>
+              <td>Sans jeton : <code>401</code>. Avec le jeton administrateur : <code>403</code> et <code>FORBIDDEN</code>. Échouerait si le endpoint autorisait un appel anonyme ou non étudiant.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Nouveau test API.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · DÉCISION DE SÉANCE</span><span class="requirement">Pas de limite métier arbitraire de longueur du message.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« accepte un message long sans limite métier arbitraire » (test ajouté)</span></li></ul></td>
+              <td>Une chaîne de 4 096 caractères donne <code>201</code> et la même chaîne est retournée. Échouerait si une limite applicative inférieure était ajoutée ou si le message était tronqué. Ce cas ne prouve pas l’absence de limite technique de transport.</td>
+              <td><span class="status covered">Couvert au cas testé</span><div class="result">Décision documentée au bilan, pas une limite chiffrée dans EF-32.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-33 · NORMAL</span><span class="requirement">GET renvoie les candidatures de l’étudiant connecté, et aucune autre.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« retourne seulement les candidatures de l'étudiant connecté et leurs statuts »</span></li></ul></td>
+              <td><code>200</code>, les deux objets attendus sont présents ; assertion ajoutée que la liste des ids triée est exactement <code>[INES_FLEET_APP, INES_BILLING_API]</code> (aucun id tiers supplémentaire). Échouerait si une candidature d’un autre étudiant apparaissait dans la réponse. Aucun champ <code>appliedAt</code>.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Assertion d’ensemble exacte, donc vérifie aussi l’absence de candidatures d’un autre.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-33 · STATUTS</span><span class="requirement">Les candidatures peuvent avoir les quatre statuts et les libellés attendus sont visibles.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« retourne les quatre statuts possibles dans les listes de leurs étudiants » (test ajouté)</span></li><li><a href="../../../frontend/tests/ApplicationsPage.test.tsx">ApplicationsPage.test.tsx</a><span>« affiche les statuts et permet de retirer uniquement une candidature en cours »</span></li></ul></td>
+              <td>API : chaque réponse contient le statut attendu pour Lucas, Mateusz, Léa et Inès. Échouerait si une liste n’exposait pas l’état correspondant. UI : asserts « En cours », « Retenue », « Non retenue », « Retirée ».</td>
+              <td><span class="status covered">Couvert</span><div class="result">États API et libellés UI reliés à des assertions explicites.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-33 · REFUS</span><span class="requirement">Une requête de consultation exige session et profil étudiant.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« refuse une requête sans session » et « refuse les profils autres qu'étudiant »</span></li></ul></td>
+              <td>Sans session : <code>401</code>. Administrateur : <code>403</code> et <code>FORBIDDEN</code>.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Contrôle API.</div></td>
+            </tr>
+            <tr data-status="partial">
+              <td><span class="req">EF-33 · INTERFACE</span><span class="requirement">Le lien vers les candidatures est proposé à l’étudiant, pas à l’administrateur.</span></td>
+              <td><ul class="test-list"><li><a href="../../../frontend/tests/NavBar.test.tsx">NavBar.test.tsx</a><span>« propose ses candidatures uniquement à un étudiant »</span></li></ul></td>
+              <td>Le lien est présent pour l’étudiant et absent pour l’administrateur. Le test ne visite pas directement la route avec un profil non étudiant.</td>
+              <td><span class="status partial">Partiel</span><div class="result">Affichage du lien couvert ; navigation directe vérifiée seulement côté API.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · VALIDATION TECHNIQUE</span><span class="requirement">Corps invalide ou message d’un mauvais type → refus.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« rejette un corps avec… » (cas paramétrés)</span></li></ul></td>
+              <td>Cas assertés : identifiant absent, <code>offerId: 0</code>, message numérique ; chacun donne <code>400</code> et <code>INVALID_BODY</code>. C’est une validation d’entrée de l’implémentation, pas un cas formulé comme tel par EF-32.</td>
+              <td><span class="status covered">Couvre ces valeurs</span><div class="result">Les autres formes invalides ne sont pas couvertes par ce test paramétré.</div></td>
+            </tr>
+            <tr data-status="covered">
+              <td><span class="req">EF-32 · RETRAIT · LIMITE TECHNIQUE</span><span class="requirement">Un identifiant de retrait non numérique est refusé.</span></td>
+              <td><ul class="test-list"><li><a href="../../../backend/tests/applications.test.ts">applications.test.ts</a><span>« valide l'identifiant de candidature »</span></li></ul></td>
+              <td>POST <code>/applications/not-a-number/withdraw</code> : <code>400</code> et <code>INVALID_BODY</code>. Validation de route ajoutée par l’implémentation, non précisée par EF-32.</td>
+              <td><span class="status covered">Couvert</span><div class="result">Cas de format précis.</div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="empty" id="empty" hidden>Aucune exigence ne correspond à ces filtres.</p>
+
+      <section class="interpretation" aria-labelledby="out-of-scope-title">
+        <h2 id="out-of-scope-title">Tests présents, mais pas des preuves directes de EF-32/EF-33</h2>
+        <ul>
+          <li><a href="../../../backend/tests/db/seed.test.ts">db/seed.test.ts</a> vérifie la cohérence des données de démonstration (statuts présents, candidature retenue correspondant au stage). Cela protège le seed ; cela ne vérifie pas à lui seul l’API de consultation ou de candidature.</li>
+          <li><a href="../../../backend/tests/db/migrations.test.ts">db/migrations.test.ts</a> vérifie l’application des migrations sur une base vierge, leur non-répétition et les clés étrangères. C’est une vérification d’infrastructure, pas une preuve fonctionnelle complète.</li>
+          <li>Les autres cas de <a href="../../../frontend/tests/OffersPage.test.tsx">OffersPage.test.tsx</a> concernant le filtre de période et les libellés des offres ne sont pas rattachés aux exigences de candidatures.</li>
+        </ul>
+      </section>
+
+      <section class="interpretation" aria-labelledby="interpretation-title">
+        <h2 id="interpretation-title">Ce que la matrice révèle</h2>
+        <ul>
+          <li>Les cas prioritaires manquants ont été ajoutés aux tests API : état <code>REJECTED</code> au retrait, accès du retrait (session et rôle), retour des quatre statuts dans les listes personnelles, et message de 4 096 caractères.</li>
+          <li>Une limite subsiste : le test du lien de navigation n’essaie pas d’ouvrir directement la route avec un autre profil. Le contrôle API des accès est testé séparément ; aucune vérification manuelle navigateur n’a été faite.</li>
+          <li>Les tests frontend simulent les réponses avec fetch ; ils ne prouvent pas le comportement dans un vrai navigateur. Les tests backend utilisent SQLite en mémoire.</li>
+          <li>La réussite de <code>npm run check</code> confirme les contrôles exécutés, mais n’élargit pas les assertions à des scénarios qui ne figurent pas dans les tests.</li>
+        </ul>
+      </section>
+
+      <section class="interpretation" aria-labelledby="validation-title">
+        <h2 id="validation-title">Vérifications exécutées après les ajouts</h2>
+        <ul>
+          <li><code>npm run test -w backend -- tests/applications.test.ts</code> — réussi : 1 fichier, 19 tests.</li>
+          <li><code>npm run check</code> — réussi : lint et TypeScript backend/frontend ; backend 10 fichiers, 133 tests ; frontend 8 fichiers, 52 tests ; builds backend et frontend réussis.</li>
+          <li>Les filtres, la recherche et les 17 lignes de traçabilité ont aussi été vérifiés automatiquement ; les liens des sources existent. Aucun test destructif ou mutation de code n’a été réalisé.</li>
+        </ul>
+      </section>
+
+      <footer>
+        Les noms de tests et leurs assertions ont été vérifiés dans les fichiers liés. L’exécution réussie d’un test n’élargit pas sa portée au-delà des assertions qu’il contient. Lien de retour : <a href="../../../docs/Semaine-3/matrice-harnais-agentique.html">matrice des guides et senseurs</a>.
+      </footer>
+    </main>
+
+    <script>
+      const rows = [...document.querySelectorAll("#requirements tr")];
+      const search = document.querySelector("#search");
+      const count = document.querySelector("#count");
+      const empty = document.querySelector("#empty");
+      const filterButtons = [...document.querySelectorAll("[data-filter]")];
+      let activeFilter = "all";
+
+      function updateRows() {
+        const query = search.value.trim().toLocaleLowerCase("fr");
+        let visibleCount = 0;
+        for (const row of rows) {
+          const matchesFilter = activeFilter === "all" || row.dataset.status === activeFilter;
+          const matchesSearch = row.textContent.toLocaleLowerCase("fr").includes(query);
+          row.hidden = !matchesFilter || !matchesSearch;
+          if (!row.hidden) visibleCount += 1;
+        }
+        count.textContent = `${visibleCount} cas affiché${visibleCount === 1 ? "" : "s"}`;
+        empty.hidden = visibleCount !== 0;
+      }
+
+      for (const button of filterButtons) {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          for (const filterButton of filterButtons) {
+            filterButton.setAttribute("aria-pressed", String(filterButton === button));
+          }
+          updateRows();
+        });
+      }
+      search.addEventListener("input", updateRows);
+      updateRows();
+    </script>
+  </body>
+</html>
