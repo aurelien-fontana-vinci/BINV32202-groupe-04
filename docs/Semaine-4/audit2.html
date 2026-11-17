@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Audit des tests EF-32 et EF-33</title>
+    <style>
+      body {
+        max-width: 1150px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #263238;
+        font: 1rem/1.5 system-ui, sans-serif;
+      }
+
+      h1 {
+        color: #174b55;
+      }
+
+      .summary {
+        padding: 0.8rem 1rem;
+        border-left: 4px solid #39836f;
+        background: #edf6f2;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 0.75rem;
+        border: 1px solid #d5e0e2;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eaf2f3;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #f7f9f9;
+      }
+
+      code {
+        color: #174b55;
+        overflow-wrap: anywhere;
+      }
+
+      .gap {
+        color: #8a4c10;
+        font-weight: 650;
+      }
+
+      .covered {
+        color: #256747;
+        font-weight: 650;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Audit des tests des candidatures — EF-32 et EF-33</h1>
+    <p>
+      Audit ciblé des tests API et interface pour la candidature à une offre publiée,
+      le retrait, les droits et la consultation des statuts. Aucun code applicatif
+      n’a été modifié.
+    </p>
+    <p class="summary">
+      Aucun manque P0 identifié. Les contrôles API couvrent les refus importants.
+      Les lacunes restantes sont ciblées : confirmer qu’un retrait croisé ne modifie
+      pas la candidature d’origine, exercer les erreurs de soumission dans l’interface
+      et couvrir l’offre dont la candidature est déjà retirée.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Cas à vérifier</th>
+            <th>Test existant et assertion utile</th>
+            <th>Manque confirmé ou constat écarté</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Refus d’une candidature à une offre non publiée</td>
+            <td>
+              <a href="../../backend/tests/applications.test.ts#L110">applications.test.ts</a> :
+              la réponse vérifie <code>409</code> et le code
+              <code>OFFER_NOT_PUBLISHED</code>.
+            </td>
+            <td class="covered">Écarté : refus API directement couvert.</td>
+          </tr>
+          <tr>
+            <td>Retrait d’une candidature déjà traitée</td>
+            <td>
+              <a href="../../backend/tests/applications.test.ts#L176">applications.test.ts</a> :
+              test paramétré sur les candidatures retenue et non retenue ; les deux
+              vérifient <code>409</code> et
+              <code>APPLICATION_ALREADY_PROCESSED</code>.
+            </td>
+            <td class="covered">Écarté : les deux statuts traités sont couverts.</td>
+          </tr>
+          <tr>
+            <td>Liste personnelle : ne pas exposer les candidatures d’un autre étudiant</td>
+            <td>
+              <a href="../../backend/tests/applications.test.ts#L30">applications.test.ts</a> :
+              le test vérifie <code>200</code>, les candidatures attendues, puis compare
+              exactement les identifiants retournés aux identifiants d’Inès.
+            </td>
+            <td class="covered">
+              Écarté : l’assertion exacte détecte toute candidature tierce ajoutée à
+              cette liste.
+            </td>
+          </tr>
+          <tr>
+            <td>Un étudiant tente de retirer la candidature d’un autre</td>
+            <td>
+              <a href="../../backend/tests/applications.test.ts#L196">applications.test.ts</a> :
+              Inès tente de retirer la candidature de Lucas ; la réponse doit être
+              <code>404</code> avec <code>APPLICATION_NOT_FOUND</code>.
+            </td>
+            <td class="gap">
+              Manque confirmé, limité à la non-modification : le test vérifie le refus,
+              mais ne relit pas la candidature de Lucas pour confirmer qu’elle reste
+              <code>IN_PROGRESS</code>. Ajouter cette assertion après la tentative.
+            </td>
+          </tr>
+          <tr>
+            <td>Accès direct à la page candidatures avec un profil non étudiant</td>
+            <td>
+              <a href="../../frontend/tests/App.test.tsx#L58">App.test.tsx</a> :
+              la session administrateur ouverte directement sur
+              <code>/candidatures</code> donne « Page introuvable » et aucune requête
+              <code>/api/applications</code>.
+            </td>
+            <td class="covered">
+              Écarté : le manque antérieurement repéré est désormais couvert par ce
+              test de route.
+            </td>
+          </tr>
+          <tr>
+            <td>Échec de la soumission d’une candidature dans l’interface</td>
+            <td>
+              <a href="../../frontend/tests/OffersPage.test.tsx#L95">OffersPage.test.tsx</a>
+              vérifie seulement le parcours réussi, le POST et l’affichage « En cours ».
+              L’API vérifie le doublon <code>409 APPLICATION_EXISTS</code> dans
+              <a href="../../backend/tests/applications.test.ts#L127">applications.test.ts</a>.
+            </td>
+            <td class="gap">
+              Manque confirmé : aucun test UI n’exerce l’erreur d’action. Simuler le
+              POST en <code>409</code>, vérifier l’erreur affichée et l’absence d’un
+              statut de candidature ajouté à tort.
+            </td>
+          </tr>
+          <tr>
+            <td>Afficher une offre déjà liée à une candidature retirée</td>
+            <td>
+              <a href="../../frontend/tests/ApplicationsPage.test.tsx#L50">ApplicationsPage.test.tsx</a>
+              couvre le libellé « Retirée » sur la page des candidatures ; le test
+              d’offre
+              <a href="../../frontend/tests/OffersPage.test.tsx#L95">OffersPage.test.tsx</a>
+              ne teste que la création d’une candidature.
+            </td>
+            <td class="gap">
+              Manque confirmé pour cette vue : fournir une candidature
+              <code>WITHDRAWN</code> au chargement, puis vérifier le statut retiré et
+              l’absence du formulaire « Candidater ».
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Plan de test recommandé</h2>
+    <ol>
+      <li>
+        Après le retrait croisé refusé, relire la liste de Lucas et vérifier que sa
+        candidature est toujours <code>IN_PROGRESS</code>.
+      </li>
+      <li>
+        Dans <code>OffersPage.test.tsx</code>, couvrir le POST en erreur
+        <code>409</code> et vérifier le rendu de l’erreur sans mise à jour optimiste.
+      </li>
+      <li>
+        Couvrir dans la même page le cas d’une candidature préexistante
+        <code>WITHDRAWN</code> : statut affiché, aucun formulaire de candidature.
+      </li>
+    </ol>
+
+    <h2>Vérifications exécutées</h2>
+    <ul>
+      <li>
+        <code>python .github/skills/scripts/coverage_map.py --top 25</code> :
+        lancé ; les correspondances automatiques sont des indices, confirmés par
+        lecture des tests ciblés.
+      </li>
+      <li>
+        <code>npm run test -w backend -- --run tests/applications.test.ts --cache=false</code> :
+        réussi, 1 fichier et 19 tests.
+      </li>
+      <li>
+        <code>npm run test -w frontend -- --run tests/OffersPage.test.tsx tests/ApplicationsPage.test.tsx tests/App.test.tsx tests/NavBar.test.tsx --cache=false</code> :
+        réussi, 4 fichiers et 20 tests.
+      </li>
+    </ul>
+    <p>
+      Tests exécutés avec Vitest, Supertest et Testing Library. Pas de test navigateur
+      réel ni de suite complète.
+    </p>
+  </body>
+</html>

@@ -1,0 +1,95 @@
+<style>
+  body {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    color: #263238;
+    font: 1rem/1.5 system-ui, sans-serif;
+  }
+
+  h2 {
+    margin-bottom: 1rem;
+    color: #174b55;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 0.75rem;
+    border: 1px solid #d5e0e2;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: #eaf2f3;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f7f9f9;
+  }
+
+  code {
+    color: #174b55;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 700px) {
+    body {
+      margin: 1rem auto;
+      padding: 0 0.5rem;
+    }
+
+    table {
+      font-size: 0.9rem;
+    }
+
+    th,
+    td {
+      padding: 0.5rem;
+    }
+  }
+</style>
+
+<h2>Vérification des tests des candidatures (EF-32 et EF-33)</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Cas à vérifier</th>
+      <th>Test existant et assertion utile</th>
+      <th>Manque confirmé ou constat écarté</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Candidater à une offre non publiée</td>
+      <td><a href="../../backend/tests/applications.test.ts#L110">applications.test.ts</a> : le test vérifie le statut HTTP <code>409</code> et le code <code>OFFER_NOT_PUBLISHED</code>.</td>
+      <td>Écarté : le refus est directement vérifié par un test API.</td>
+    </tr>
+    <tr>
+      <td>Retirer une candidature déjà traitée</td>
+      <td><a href="../../backend/tests/applications.test.ts#L174">applications.test.ts</a> : le test paramétré couvre les statuts retenue et non retenue, avec <code>409</code> et <code>APPLICATION_ALREADY_PROCESSED</code>.</td>
+      <td>Écarté : les deux états traités sont couverts.</td>
+    </tr>
+    <tr>
+      <td>Consulter les candidatures d’un autre étudiant</td>
+      <td><a href="../../backend/tests/applications.test.ts#L30">applications.test.ts</a> : après vérification de la réponse <code>200</code>, le test compare la liste exacte des identifiants attendus à ceux de l’étudiant connecté ; une candidature tierce supplémentaire ferait échouer l’assertion.</td>
+      <td>Écarté pour la liste API : l’assertion d’ensemble vérifie qu’aucun identifiant tiers ne s’ajoute.</td>
+    </tr>
+    <tr>
+      <td>Retirer la candidature d’un autre étudiant</td>
+      <td><a href="../../backend/tests/applications.test.ts#L196">applications.test.ts</a> : Inès tente de retirer la candidature de Lucas ; le test vérifie <code>404</code> et <code>APPLICATION_NOT_FOUND</code>.</td>
+      <td>Écarté pour le retrait API : l’accès à une candidature appartenant à autrui est directement testé.</td>
+    </tr>
+    <tr>
+      <td>Ouvrir directement la page des candidatures avec un profil non étudiant</td>
+      <td><a href="../../frontend/tests/NavBar.test.tsx#L27">NavBar.test.tsx</a> vérifie seulement que le lien est absent pour l’administrateur. La route est conditionnée au profil dans <a href="../../frontend/src/App.tsx#L35">App.tsx</a>, mais aucun test ne navigue directement vers cette URL avec un autre profil.</td>
+      <td>Manque confirmé côté interface : ajouter un test de navigation directe et vérifier l’affichage de la page introuvable, sans appel à <code>/api/applications</code>.</td>
+    </tr>
+  </tbody>
+</table>

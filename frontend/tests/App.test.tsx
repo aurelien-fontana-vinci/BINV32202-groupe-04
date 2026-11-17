@@ -2,13 +2,13 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it } from "vitest";
 import App from "../src/App.tsx";
-import { studentUser, stubFetch } from "./helpers/fetchMock.ts";
+import { adminUser, studentUser, stubFetch } from "./helpers/fetchMock.ts";
 
 const TOKEN_KEY = "gesta.token";
 
-const renderApp = () =>
+const renderApp = (initialEntry = "/") =>
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <App />
     </MemoryRouter>,
   );
@@ -53,6 +53,20 @@ describe("App : session", () => {
 
     expect(await screen.findByRole("heading", { name: "Bonjour Mateusz" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Entreprises" })).toBeInTheDocument();
+  });
+
+  it("refuse l'accès direct aux candidatures pour un administrateur", async () => {
+    localStorage.setItem(TOKEN_KEY, "jeton-anne");
+    const fetchMock = stubFetch({
+      "/api/auth/me": () => Response.json(adminUser),
+    });
+
+    renderApp("/candidatures");
+
+    expect(await screen.findByRole("heading", { name: "Page introuvable" })).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([input]) => String(input).startsWith("/api/applications")),
+    ).toBe(false);
   });
 
   it("oublie une session refusée par le backend", async () => {

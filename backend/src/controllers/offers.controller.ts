@@ -7,6 +7,15 @@ import type { OffersService } from "../services/offers.service.ts";
 import { canListOffers } from "../services/permissions.ts";
 import { HttpError } from "../utils/httpError.ts";
 
+const parseSearch = (value: unknown): string | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") {
+    throw new HttpError(400, "INVALID_QUERY", "Le paramètre q doit apparaître une seule fois");
+  }
+  const search = value.trim();
+  return search === "" ? undefined : search;
+};
+
 const parsePeriod = (value: unknown): PeriodCode | undefined => {
   if (value === undefined) return undefined;
   if (typeof value !== "string") {
@@ -27,7 +36,11 @@ export const createOffersRouter = (offersService: OffersService) => {
   const router = Router();
 
   router.get("/", authorize(canListOffers), (req, res) => {
-    const offers = offersService.listOffers(getCurrentUser(req), parsePeriod(req.query.period));
+    const offers = offersService.listOffers(
+      getCurrentUser(req),
+      parsePeriod(req.query.period),
+      parseSearch(req.query.q),
+    );
     res.json(offers.map(toOfferDto));
   });
 
