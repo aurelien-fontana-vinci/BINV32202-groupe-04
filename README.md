@@ -105,7 +105,7 @@ Ces fonctionnalités du cahier des charges n'existent pas encore, ni dans l'API 
 l'interface :
 
 - création d'une offre par un déposant, modification ou retrait ;
-- recherche et filtrage des offres (année, période, statut…) ;
+- recherche par entreprise ou localité, et filtrage des offres par année ou statut ;
 - validation, mise en attente, publication ou archivage d'une offre par un administrateur ;
 - sélection d'un candidat et création du stage ;
 - déclaration d'un stage par un étudiant et validation par un administrateur ;

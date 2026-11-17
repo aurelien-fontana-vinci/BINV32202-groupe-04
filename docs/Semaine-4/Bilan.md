@@ -1,0 +1,1 @@
+Crédit en debut de séance : 18%

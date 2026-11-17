@@ -127,3 +127,45 @@ describe("GET /offers : filtre par période", () => {
     expect(response.body.error.code).toBe("FORBIDDEN");
   });
 });
+
+describe("GET /offers : recherche par titre", () => {
+  it("recherche l'expression entière dans le titre sans tenir compte de la casse et des espaces externes", async () => {
+    const response = await listOffersAs(
+      "ADMIN",
+      ADMINISTRATOR.ANNE_LECLERCQ,
+    ).query({ q: "  rEfOnTe Du PoRtAiL  " });
+
+    expect(response.status).toBe(200);
+    expect(offerIds(response.body)).toEqual([OFFER.CLIENT_PORTAL]);
+  });
+
+  it("ne traite pas plusieurs mots comme des termes séparés", async () => {
+    const response = await listOffersAs("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ).query({
+      q: "application cloud",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  it("ignore une recherche composée uniquement d'espaces", async () => {
+    const allOffers = await listOffersAs("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ);
+    const blankSearch = await listOffersAs("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ).query({
+      q: "   ",
+    });
+
+    expect(blankSearch.status).toBe(200);
+    expect(offerIds(blankSearch.body)).toEqual(offerIds(allOffers.body));
+  });
+
+  it("combine la recherche et la période sans montrer les offres non publiées à un étudiant", async () => {
+    const response = await listOffersAs("STUDENT", STUDENT.LUCAS_DUPONT).query({
+      q: "application",
+      period: "P2",
+    });
+
+    expect(response.status).toBe(200);
+    expect(offerIds(response.body)).toEqual([OFFER.FLEET_APP]);
+    expect(response.body.every((offer: { status: string }) => offer.status === "PUBLISHED")).toBe(true);
+  });
+});
