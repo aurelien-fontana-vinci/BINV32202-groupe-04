@@ -1,0 +1,7 @@
+# Scénarios E2E — Recherche d’offres générée par l'ia pour avoir un visuel et voir ce que l'ia propose suite a nos scenarios
+
+
+| Numéro | Scénario | État initial (rôle et données) | Actions dans l’interface | Résultat attendu |
+|---|---|---|---|---|
+| 1 | Recherche avec résultat | L’utilisateur est connecté comme étudiant (par exemple Lucas Dupont) et ouvre le catalogue des offres. Le jeu de démonstration contient l’offre publiée « Application React de gestion de flotte » (Lumen Digital, P2), ainsi que l’offre « Migration d'une application vers le cloud » au statut « Attribuée » (Datavia). D’autres offres publiées sans le mot « application » sont présentes. | Dans le champ « Rechercher par titre », saisir `  APPLICATION  `. | La liste affiche « Application React de gestion de flotte ». Elle n’affiche ni les offres publiées dont le titre ne contient pas « application », ni « Migration d'une application vers le cloud », qui n’est pas publiée et reste donc invisible pour l’étudiant. |
+| 2 | Recherche sans résultat | L’utilisateur est connecté comme étudiant et consulte le même catalogue initialisé avec les offres de démonstration. Aucune offre publiée ne contient l’expression `stage introuvable 9x7q` dans son titre. | Dans le champ « Rechercher par titre », saisir `stage introuvable 9x7q`. | Aucune offre n’est listée et l’interface affiche le message « Aucune offre ne correspond à votre recherche. » |
